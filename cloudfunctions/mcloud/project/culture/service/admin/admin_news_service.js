@@ -15,23 +15,28 @@ class AdminNewsService extends BaseProjectAdminService {
 
 	/** 推荐首页SETUP */
 	async vouchNews(id, vouch) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		await NewsModel.edit({ _id: id, _pid: this.getProjectId() }, { NEWS_VOUCH: Number(vouch) });
 	}
 
 	/**添加资讯 */
 	async insertNews({
-	 
+		title, cateId, cateName, order, desc, forms = []
 	}) {
-
-
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		return await NewsModel.insert({
+			_pid: this.getProjectId(), NEWS_TITLE: title, NEWS_CATE_ID: cateId,
+			NEWS_CATE_NAME: cateName, NEWS_ORDER: Number(order), NEWS_DESC: desc,
+			NEWS_STATUS: 1, NEWS_VOUCH: 0, NEWS_FORMS: forms,
+			NEWS_OBJ: dataUtil.dbForms2Obj(forms)
+		});
 	}
 
 	/**删除资讯数据 */
 	async delNews(id) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
-
-
+		const news = await NewsModel.getOne({ _id: id, _pid: this.getProjectId() });
+		if (!news) return;
+		cloudUtil.handlerCloudFilesForForms(news.NEWS_FORMS || [], []);
+		if (news.NEWS_QR) cloudUtil.deleteFiles([news.NEWS_QR]);
+		await NewsModel.del({ _id: id, _pid: this.getProjectId() });
 	}
 
 	/**获取资讯信息 */
@@ -50,10 +55,12 @@ class AdminNewsService extends BaseProjectAdminService {
 	// 更新forms信息
 	async updateNewsForms({
 		id,
-		hasImageForms
+		hasImageForms = []
 	}) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
-
+		await NewsModel.edit({ _id: id, _pid: this.getProjectId() }, {
+			NEWS_FORMS: hasImageForms,
+			NEWS_OBJ: dataUtil.dbForms2Obj(hasImageForms)
+		});
 	}
 
 
@@ -66,7 +73,7 @@ class AdminNewsService extends BaseProjectAdminService {
 		content // 富文本数组
 	}) {
 
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		await NewsModel.edit({ _id: id, _pid: this.getProjectId() }, { NEWS_CONTENT: content || [] });
 
 	}
 
@@ -79,17 +86,21 @@ class AdminNewsService extends BaseProjectAdminService {
 		imgList // 图片数组
 	}) {
 
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		await NewsModel.edit({ _id: id, _pid: this.getProjectId() }, { NEWS_PIC: imgList || [] });
+		return imgList || [];
 
 	}
 
 
 	/**更新资讯数据 */
 	async editNews({
-	 
+		id, title, cateId, cateName, order, desc, forms = []
 	}) {
-
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		await NewsModel.edit({ _id: id, _pid: this.getProjectId() }, {
+			NEWS_TITLE: title, NEWS_CATE_ID: cateId, NEWS_CATE_NAME: cateName,
+			NEWS_ORDER: Number(order), NEWS_DESC: desc, NEWS_FORMS: forms,
+			NEWS_OBJ: dataUtil.dbForms2Obj(forms)
+		});
 
 	}
 
@@ -150,12 +161,12 @@ class AdminNewsService extends BaseProjectAdminService {
 
 	/**修改资讯状态 */
 	async statusNews(id, status) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		await NewsModel.edit({ _id: id, _pid: this.getProjectId() }, { NEWS_STATUS: Number(status) });
 	}
 
 	/**置顶与排序设定 */
 	async sortNews(id, sort) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		await NewsModel.edit({ _id: id, _pid: this.getProjectId() }, { NEWS_ORDER: Number(sort) });
 	}
 }
 

@@ -12,6 +12,11 @@ const timeUtil = require('../../../../framework/utils/time_util.js');
 const dataUtil = require('../../../../framework/utils/data_util.js');
 const UserModel = require('../../model/user_model.js');
 const AdminHomeService = require('./admin_home_service.js');
+const FavModel = require('../../model/fav_model.js');
+const ActivityJoinModel = require('../../model/activity_join_model.js');
+const ActivityModel = require('../../model/activity_model.js');
+const InfoModel = require('../../model/info_model.js');
+const HistoryModel = require('../../model/history_model.js');
 
 // 导出用户数据KEY
 const EXPORT_USER_DATA_KEY = 'EXPORT_USER_DATA';
@@ -28,6 +33,66 @@ class AdminUserService extends BaseProjectAdminService {
 			USER_MINI_OPENID: userId,
 		}
 		return await UserModel.getOne(where, fields);
+	}
+
+	/** 取得用户行为数据，供后台用户详情查看 */
+	async getUserActivityData(userId) {
+		const favList = await FavModel.getAll({ FAV_USER_ID: userId }, '*', { FAV_ADD_TIME: 'desc' }, 100);
+		const joinList = await ActivityJoinModel.getAll({ ACTIVITY_JOIN_USER_ID: userId }, '*', { ACTIVITY_JOIN_ADD_TIME: 'desc' }, 100);
+		for (const item of joinList) {
+			item.ACTIVITY_JOIN_ADD_TIME = timeUtil.timestamp2Time(item.ACTIVITY_JOIN_ADD_TIME);
+			item.activity = await ActivityModel.getOne({ _id: item.ACTIVITY_JOIN_ACTIVITY_ID }, 'ACTIVITY_TITLE,ACTIVITY_START,ACTIVITY_END');
+		}
+
+		const infoList = await InfoModel.getAll({ INFO_USER_ID: userId }, '*', { INFO_ADD_TIME: 'desc' }, 100);
+		for (const item of infoList) {
+			item.INFO_ADD_TIME = timeUtil.timestamp2Time(item.INFO_ADD_TIME);
+			item.INFO_OBJ = item.INFO_OBJ || {};
+			if (!item.INFO_OBJ.title && Array.isArray(item.INFO_FORMS)) {
+				const titleForm = item.INFO_FORMS.find(form => form.mark === 'title');
+				if (titleForm) item.INFO_OBJ.title = titleForm.val || '';
+			}
+		}
+
+		let historyList = [];
+		try {
+			historyList = await HistoryModel.getAll({ HISTORY_USER_ID: userId }, '*', { HISTORY_ADD_TIME: 'desc' }, 100);
+		} catch (err) {
+			// 兼容尚未在云开发控制台创建 bx_history 的旧环境。
+			historyList = [];
+		}
+		const typeDesc = { product: '旅行攻略', activity: '活动', info: '游记', news: '公告/服务' };
+		for (const item of historyList) {
+			item.HISTORY_TYPE_DESC = typeDesc[item.HISTORY_TYPE] || item.HISTORY_TYPE;
+			item.HISTORY_ADD_TIME = timeUtil.timestamp2Time(item.HISTORY_ADD_TIME);
+		}
+		for (const item of favList) item.FAV_ADD_TIME = timeUtil.timestamp2Time(item.FAV_ADD_TIME);
+
+		return {
+			favList,
+			joinList,
+			infoList,
+			historyList,
+			counts: {
+				fav: favList.length,
+				join: joinList.length,
+				info: infoList.length,
+				history: historyList.length
+			}
+		};
+	}
+
+	async delUserHistory(userId, historyId) {
+		await HistoryModel.del({
+			_id: historyId,
+			HISTORY_USER_ID: userId
+		});
+	}
+
+	async clearUserHistory(userId) {
+		await HistoryModel.del({
+			HISTORY_USER_ID: userId
+		});
 	}
 
 	/** 取得用户分页列表 */
@@ -87,13 +152,15 @@ class AdminUserService extends BaseProjectAdminService {
 	}
 
 	async statusUser(id, status, reason) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		await UserModel.edit({ _id: id, _pid: this.getProjectId() }, {
+			USER_STATUS: Number(status),
+			USER_CHECK_REASON: reason || ''
+		});
 	}
 
 	/**删除用户 */
 	async delUser(id) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
-
+		await UserModel.del({ _id: id, _pid: this.getProjectId() });
 	}
 
 	// #####################导出用户数据
@@ -110,9 +177,12 @@ class AdminUserService extends BaseProjectAdminService {
 
 	/**导出用户数据 */
 	async exportUserDataExcel(condition, fields) {
-
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
-
+		let where = {};
+		try { where = JSON.parse(decodeURIComponent(condition || '{}')); } catch (e) { where = {}; }
+		const list = await UserModel.getAll(where, fields || '*', { USER_ADD_TIME: 'asc' }, 10000);
+		const rows = [['用户昵称', '手机号', '状态', '注册时间']];
+		for (const item of list) rows.push([item.USER_NAME || '', item.USER_MOBILE || '', item.USER_STATUS, timeUtil.timestamp2Time(item.USER_ADD_TIME)]);
+		return await exportUtil.exportDataExcel(EXPORT_USER_DATA_KEY, '用户数据', list.length, rows);
 	}
 
 }

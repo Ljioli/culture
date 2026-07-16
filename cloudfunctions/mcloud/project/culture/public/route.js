@@ -24,6 +24,7 @@ module.exports = {
 
 	'admin/home': 'admin/admin_home_controller@adminHome',
 	'admin/clear_vouch': 'admin/admin_home_controller@clearVouchData',
+	'admin/seed_demo': 'admin/admin_seed_controller@seedDemoData',
 
 	'admin/login': 'admin/admin_mgr_controller@adminLogin',
 	'admin/mgr_list': 'admin/admin_mgr_controller@getMgrList',
@@ -49,6 +50,8 @@ module.exports = {
 	'admin/user_data_get': 'admin/admin_user_controller@userDataGet',
 	'admin/user_data_export': 'admin/admin_user_controller@userDataExport',
 	'admin/user_data_del': 'admin/admin_user_controller@userDataDel',
+	'admin/user_history_del': 'admin/admin_user_controller@delUserHistory',
+	'admin/user_history_clear': 'admin/admin_user_controller@clearUserHistory',
 
 	// 产品 
 	'product/list': 'product_controller@getProductList',

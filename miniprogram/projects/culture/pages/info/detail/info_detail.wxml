@@ -7,7 +7,7 @@
 	<view class="main">
 
 		<view class="cover">
-			<image bind:tap="url" data-url="{{info.INFO_OBJ.cover[0]}}" data-type="img" src="{{info.INFO_OBJ.cover[0]}}" class="loading  shadow-project" show-menu-by-longpress="{{true}}" mode='widthFix' lazy-load="true"></image>
+			<image wx:if="{{info.INFO_OBJ.cover[0]}}" bind:tap="url" data-url="{{info.INFO_OBJ.cover[0]}}" data-type="img" src="{{info.INFO_OBJ.cover[0]}}" class="shadow-project" show-menu-by-longpress="{{true}}" mode='widthFix' lazy-load="true"></image>
 			<view class="mark">
 				<text class="icon-attention margin-right-xxs"></text>{{info.INFO_VIEW_CNT}}
 				<text class="icon-comment margin-right-xxs"></text>{{info.INFO_COMMENT_CNT}}

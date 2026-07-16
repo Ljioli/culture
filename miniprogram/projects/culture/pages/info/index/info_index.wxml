@@ -27,7 +27,8 @@
 				<!-- 重点是mode为widthFix -->
 				<view class="content-item-img">
 					<view class="mark">{{INFO_CATE_NAME}}</view>
-					<image src="{{INFO_OBJ.cover}}" class="content-item-img loading" lazy-load="{{true}}" mode="widthFix" />
+					<image wx:if="{{INFO_OBJ.cover[0]}}" src="{{INFO_OBJ.cover[0]}}" class="content-item-img" lazy-load="{{true}}" mode="widthFix" />
+					<view wx:else class="content-item-img empty-cover">暂无封面</view>
 					<view class="view">
 						<text class="icon-attention margin-right-xxs"></text>{{INFO_VIEW_CNT}}
 						<text class="icon-comment margin-right-xxs"></text>{{INFO_COMMENT_CNT}}

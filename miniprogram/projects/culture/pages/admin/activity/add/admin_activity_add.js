@@ -74,6 +74,20 @@ Page({
 		let forms = this.selectComponent("#cmpt-form").getForms(true);
 		if (!forms) return;
 		data.forms = forms;
+		data.formForms = forms;
+		data.formTitle = data.title;
+		data.formCateId = data.cateId;
+		data.formOrder = data.order;
+		data.formMaxCnt = data.maxCnt;
+		data.formStart = data.start;
+		data.formEnd = data.end;
+		data.formStop = data.stop;
+		data.formAddress = data.address;
+		data.formAddressGeo = data.addressGeo;
+		data.formCheckSet = data.checkSet;
+		data.formCancelSet = data.cancelSet;
+		data.formIsMenu = data.isMenu;
+		data.formJoinForms = data.joinForms;
 
 		data.cateName = ActivityBiz.getCateName(data.cateId);
 

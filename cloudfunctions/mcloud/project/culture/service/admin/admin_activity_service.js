@@ -83,7 +83,7 @@ class AdminActivityService extends BaseProjectAdminService {
 
 	/**置顶与排序设定 */
 	async sortActivity(id, sort) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		await ActivityModel.edit({ _id: id, _pid: this.getProjectId() }, { ACTIVITY_ORDER: Number(sort) });
 	}
 
 	/**获取信息 */
@@ -103,52 +103,118 @@ class AdminActivityService extends BaseProjectAdminService {
 
 	/**首页设定 */
 	async vouchActivity(id, vouch) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		await ActivityModel.edit({ _id: id, _pid: this.getProjectId() }, { ACTIVITY_VOUCH: Number(vouch) });
 
 	}
 
 	/**添加 */
-	async insertActivity({
-
-	}) {
-
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+	async insertActivity(input) {
+		const {
+			formTitle, formCateId, cateName, formOrder, formMaxCnt, formStart, formEnd, formStop,
+			formAddress, formAddressGeo, formCheckSet, formCancelSet, formIsMenu, formForms = [], formJoinForms = []
+		} = this._normalizeActivityInput(input);
+		const data = {
+			_pid: this.getProjectId(),
+			ACTIVITY_TITLE: formTitle,
+			ACTIVITY_CATE_ID: formCateId,
+			ACTIVITY_CATE_NAME: cateName,
+			ACTIVITY_ORDER: Number(formOrder),
+			ACTIVITY_MAX_CNT: Number(formMaxCnt),
+			ACTIVITY_START: timeUtil.time2Timestamp(formStart),
+			ACTIVITY_END: timeUtil.time2Timestamp(formEnd),
+			ACTIVITY_STOP: timeUtil.time2Timestamp(formStop),
+			ACTIVITY_ADDRESS: formAddress,
+			ACTIVITY_ADDRESS_GEO: formAddressGeo,
+			ACTIVITY_CHECK_SET: Number(formCheckSet),
+			ACTIVITY_CANCEL_SET: Number(formCancelSet),
+			ACTIVITY_IS_MENU: Number(formIsMenu),
+			ACTIVITY_FORMS: formForms,
+			ACTIVITY_OBJ: dataUtil.dbForms2Obj(formForms),
+			ACTIVITY_JOIN_FORMS: formJoinForms,
+			ACTIVITY_STATUS: ActivityModel.STATUS.COMM,
+			ACTIVITY_VOUCH: 0,
+			ACTIVITY_JOIN_CNT: 0,
+			ACTIVITY_USER_LIST: []
+		};
+		return { id: await ActivityModel.insert(data) };
 	}
 
 	//#############################   
 	/** 清空 */
 	async clearActivityAll(activityId) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
-
+		await ActivityJoinModel.del({ ACTIVITY_JOIN_ACTIVITY_ID: activityId });
+		await ActivityModel.edit({ _id: activityId, _pid: this.getProjectId() }, { ACTIVITY_JOIN_CNT: 0, ACTIVITY_USER_LIST: [] });
 	}
 
 
 	/**删除数据 */
 	async delActivity(id) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
-
+		const activity = await ActivityModel.getOne({ _id: id, _pid: this.getProjectId() });
+		if (!activity) return;
+		cloudUtil.handlerCloudFilesForForms(activity.ACTIVITY_FORMS || [], []);
+		if (activity.ACTIVITY_QR) cloudUtil.deleteFiles([activity.ACTIVITY_QR]);
+		await ActivityJoinModel.del({ ACTIVITY_JOIN_ACTIVITY_ID: id });
+		await ActivityModel.del({ _id: id, _pid: this.getProjectId() });
 	}
 
 	// 更新forms信息
 	async updateActivityForms({
 		id,
-		hasImageForms
+		hasImageForms = []
 	}) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
-
+		await ActivityModel.editForms({ _id: id, _pid: this.getProjectId() }, 'ACTIVITY_FORMS', 'ACTIVITY_OBJ', hasImageForms);
 	}
 
 	/**更新数据 */
-	async editActivity({
+	async editActivity(input) {
+		const {
+			id, formTitle, formCateId, cateName, formOrder, formMaxCnt, formStart, formEnd, formStop,
+			formAddress, formAddressGeo, formCheckSet, formCancelSet, formIsMenu, formForms = [], formJoinForms = []
+		} = this._normalizeActivityInput(input);
+		await ActivityModel.edit({ _id: id, _pid: this.getProjectId() }, {
+			ACTIVITY_TITLE: formTitle,
+			ACTIVITY_CATE_ID: formCateId,
+			ACTIVITY_CATE_NAME: cateName,
+			ACTIVITY_ORDER: Number(formOrder),
+			ACTIVITY_MAX_CNT: Number(formMaxCnt),
+			ACTIVITY_START: timeUtil.time2Timestamp(formStart),
+			ACTIVITY_END: timeUtil.time2Timestamp(formEnd),
+			ACTIVITY_STOP: timeUtil.time2Timestamp(formStop),
+			ACTIVITY_ADDRESS: formAddress,
+			ACTIVITY_ADDRESS_GEO: formAddressGeo,
+			ACTIVITY_CHECK_SET: Number(formCheckSet),
+			ACTIVITY_CANCEL_SET: Number(formCancelSet),
+			ACTIVITY_IS_MENU: Number(formIsMenu),
+			ACTIVITY_FORMS: formForms,
+			ACTIVITY_OBJ: dataUtil.dbForms2Obj(formForms),
+			ACTIVITY_JOIN_FORMS: formJoinForms
+		});
+	}
 
-	}) {
-
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+	_normalizeActivityInput(input = {}) {
+		return {
+			id: input.id,
+			formTitle: input.formTitle || input.title || '',
+			formCateId: input.formCateId || input.cateId || '',
+			cateName: input.cateName || '',
+			formOrder: util.isDefined(input.formOrder) ? input.formOrder : input.order,
+			formMaxCnt: util.isDefined(input.formMaxCnt) ? input.formMaxCnt : input.maxCnt,
+			formStart: input.formStart || input.start || '',
+			formEnd: input.formEnd || input.end || '',
+			formStop: input.formStop || input.stop || '',
+			formAddress: input.formAddress || input.address || '',
+			formAddressGeo: input.formAddressGeo || input.addressGeo || {},
+			formCheckSet: util.isDefined(input.formCheckSet) ? input.formCheckSet : input.checkSet,
+			formCancelSet: util.isDefined(input.formCancelSet) ? input.formCancelSet : input.cancelSet,
+			formIsMenu: util.isDefined(input.formIsMenu) ? input.formIsMenu : input.isMenu,
+			formForms: input.formForms || input.forms || [],
+			formJoinForms: input.formJoinForms || input.joinForms || []
+		};
 	}
 
 	/**修改状态 */
 	async statusActivity(id, status) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		await ActivityModel.edit({ _id: id, _pid: this.getProjectId() }, { ACTIVITY_STATUS: Number(status) });
 	}
 
 	//#############################
@@ -203,36 +269,68 @@ class AdminActivityService extends BaseProjectAdminService {
 	/**修改报名状态  
 	 */
 	async statusActivityJoin(activityJoinId, status, reason = '') {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
-
+		await ActivityJoinModel.edit({ _id: activityJoinId, _pid: this.getProjectId() }, {
+			ACTIVITY_JOIN_STATUS: Number(status),
+			ACTIVITY_JOIN_REASON: reason || ''
+		});
 	}
 
 
 	/** 取消某项目的所有报名记录 */
 	async cancelActivityJoinAll(activityId, reason) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		await ActivityJoinModel.edit({
+			_pid: this.getProjectId(),
+			ACTIVITY_JOIN_ACTIVITY_ID: activityId,
+			ACTIVITY_JOIN_STATUS: ActivityJoinModel.STATUS.SUCC
+		}, {
+			ACTIVITY_JOIN_STATUS: ActivityJoinModel.STATUS.ADMIN_CANCEL,
+			ACTIVITY_JOIN_REASON: reason || '管理员取消报名'
+		});
+		await ActivityModel.edit({ _id: activityId, _pid: this.getProjectId() }, { ACTIVITY_JOIN_CNT: 0, ACTIVITY_USER_LIST: [] });
 	}
 
 	/** 删除报名 */
 	async delActivityJoin(activityJoinId) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
-
+		await ActivityJoinModel.del({ _id: activityJoinId, _pid: this.getProjectId() });
 	}
 
 	/** 自助签到码 */
 	async genActivitySelfCheckinQr(page, activityId) {
-
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		const cloud = cloudBase.getCloud();
+		const result = await cloud.openapi.wxacode.getUnlimited({
+			scene: activityId,
+			width: 280,
+			check_path: false,
+			page: page.replace(/^\//, '')
+		});
+		const cloudPath = `${this.getProjectId()}/activity/${activityId}/checkin_${this._timestamp}.png`;
+		const upload = await cloud.uploadFile({ cloudPath, fileContent: result.buffer });
+		if (!upload || !upload.fileID) return '';
+		return await cloudUtil.getTempFileURLOne(upload.fileID);
 	}
 
 	/** 管理员按钮核销 */
 	async checkinActivityJoin(activityJoinId, flag) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		const data = Number(flag) === 1 ? {
+			ACTIVITY_JOIN_IS_CHECKIN: 1,
+			ACTIVITY_JOIN_CHECKIN_TIME: this._timestamp
+		} : {
+			ACTIVITY_JOIN_IS_CHECKIN: 0,
+			ACTIVITY_JOIN_CHECKIN_TIME: 0
+		};
+		await ActivityJoinModel.edit({ _id: activityJoinId, _pid: this.getProjectId() }, data);
 	}
 
 	/** 管理员扫码核销 */
 	async scanActivityJoin(activityId, code) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		const join = await ActivityJoinModel.getOne({
+			_pid: this.getProjectId(),
+			ACTIVITY_JOIN_ACTIVITY_ID: activityId,
+			ACTIVITY_JOIN_CODE: code,
+			ACTIVITY_JOIN_STATUS: ActivityJoinModel.STATUS.SUCC
+		});
+		if (!join) this.AppError('未找到有效的报名记录');
+		await this.checkinActivityJoin(join._id, 1);
 	}
 
 	// #####################导出报名数据
@@ -251,8 +349,16 @@ class AdminActivityService extends BaseProjectAdminService {
 		activityId,
 		status
 	}) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
-
+		const where = { _pid: this.getProjectId(), ACTIVITY_JOIN_ACTIVITY_ID: activityId };
+		if (Number(status) !== -1) where.ACTIVITY_JOIN_STATUS = Number(status);
+		const list = await ActivityJoinModel.getAll(where, '*', { ACTIVITY_JOIN_ADD_TIME: 'asc' }, 10000);
+		const rows = [['报名编号', '报名状态', '是否签到', '报名时间']];
+		for (const item of list) {
+			const formVals = (item.ACTIVITY_JOIN_FORMS || []).map(form => form.val || '');
+			if (rows.length === 1) rows[0] = rows[0].concat((item.ACTIVITY_JOIN_FORMS || []).map(form => form.title || form.mark || '字段'));
+			rows.push([item._id, item.ACTIVITY_JOIN_STATUS, item.ACTIVITY_JOIN_IS_CHECKIN ? '是' : '否', timeUtil.timestamp2Time(item.ACTIVITY_JOIN_ADD_TIME), ...formVals]);
+		}
+		return await exportUtil.exportDataExcel(EXPORT_ACTIVITY_JOIN_DATA_KEY, '活动报名', list.length, rows);
 	}
 }
 

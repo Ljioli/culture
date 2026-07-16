@@ -114,7 +114,7 @@ Page({
 			if (!forms) return;
 			data.forms = forms;
 			data.id = id;
-			data.cateName = InfoBiz.getCateName(data.cateId);
+			data.cateName = InfoBiz.getCateName(data.cateId || data.formCateId);
 
 			let opts = {
 				title: '提交中'

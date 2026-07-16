@@ -32,8 +32,15 @@ class AdminUserController extends BaseProjectAdminController {
 
 		if (user) {
 			// 显示转换  
+			user.USER_NAME = fmtUserName(user.USER_NAME, user.USER_MINI_OPENID);
 			user.USER_ADD_TIME = timeUtil.timestamp2Time(user.USER_ADD_TIME);
 			user.USER_LOGIN_TIME = user.USER_LOGIN_TIME ? timeUtil.timestamp2Time(user.USER_LOGIN_TIME) : '未登录';
+			try {
+				user.userData = await service.getUserActivityData(input.id);
+			} catch (err) {
+				// 行为数据异常不能影响原有用户资料详情。
+				user.userData = { favList: [], joinList: [], infoList: [], historyList: [], counts: { fav: 0, join: 0, info: 0, history: 0 } };
+			}
 		}
 
 		return user;
@@ -67,6 +74,7 @@ class AdminUserController extends BaseProjectAdminController {
 		let list = result.list;
 		for (let k = 0; k < list.length; k++) {
 			list[k].USER_STATUS_DESC = UserModel.getDesc('STATUS', list[k].USER_STATUS);
+			list[k].USER_NAME = fmtUserName(list[k].USER_NAME, list[k].USER_MINI_OPENID);
 			list[k].USER_ADD_TIME = timeUtil.timestamp2Time(list[k].USER_ADD_TIME);
 			list[k].USER_LOGIN_TIME = list[k].USER_LOGIN_TIME ? timeUtil.timestamp2Time(list[k].USER_LOGIN_TIME) : '未登录';
 
@@ -112,6 +120,33 @@ class AdminUserController extends BaseProjectAdminController {
 
 		let service = new AdminUserService();
 		await service.statusUser(input.id, input.status, input.reason);
+	}
+
+	async delUserHistory() {
+		await this.isAdmin();
+
+		let rules = {
+			userId: 'must|id',
+			historyId: 'must|id'
+		};
+
+		let input = this.validateData(rules);
+
+		let service = new AdminUserService();
+		await service.delUserHistory(input.userId, input.historyId);
+	}
+
+	async clearUserHistory() {
+		await this.isAdmin();
+
+		let rules = {
+			userId: 'must|id'
+		};
+
+		let input = this.validateData(rules);
+
+		let service = new AdminUserService();
+		await service.clearUserHistory(input.userId);
 	}
 
 	/************** 用户数据导出 BEGIN ********************* */
@@ -165,6 +200,13 @@ class AdminUserController extends BaseProjectAdminController {
 		let service = new AdminUserService();
 		return await service.deleteUserDataExcel();
 	}
+}
+
+function fmtUserName(name, openid) {
+	if (!name) return '';
+	if (openid && name === openid) return '';
+	if (/^[A-Za-z0-9_-]{18,}$/.test(name)) return '';
+	return name;
 }
 
 module.exports = AdminUserController;

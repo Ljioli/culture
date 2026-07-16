@@ -90,7 +90,7 @@ Page({
 			let forms = this.selectComponent("#cmpt-form").getForms(true);
 			if (!forms) return;
 			data.forms = forms;
-			data.cateName = InfoBiz.getCateName(data.cateId);
+			data.cateName = InfoBiz.getCateName(data.cateId || data.formCateId);
 
 		 
 			let result = await cloudHelper.callCloudSumbit('info/insert', data);

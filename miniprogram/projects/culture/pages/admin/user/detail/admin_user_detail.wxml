@@ -1,39 +1,159 @@
 <view wx:if="{{isLoad===null}}" class="margin-top load notexist text-l text-grey"></view>
 <view wx:if="{{isLoad===false}}" class="margin-top load loading text-l text-grey"></view>
 
-<view wx:if="{{isLoad && isAdmin}}" class="main-admin">
-	<view class="admin-comm-list">
-		<view class="item">
-			<view class="info">
-				<view class="info-item pic" bindtap="url" data-url="{{user.USER_PIC}}" data-type="image" >
-					<view class="title"></view>
-					<view class="mao"> </view>
-					<view class="content text-admin">
-						<image mode="aspectFill" class="loading" src="{{user.USER_PIC}}" />
-					</view>  
-				</view>
-				<view class="info-item">
-					<view class="title">用户昵称</view>
-					<view class="mao">：</view>
-					<view class="content text-admin  text-l">{{user.USER_NAME}} </view>
-				</view>
-				<view class="info-item" bindtap="url" data-type="phone" data-url="{{user.USER_MOBILE}}">
-					<view class="title">手机号码</view>
-					<view class="mao">：</view>
-					<view class="content">{{user.USER_MOBILE}} <text class="icon-phone text-l margin-left-xs"></text></view>
-				</view>
-				<view class="info-item">
-					<view class="title">注册时间</view>
-					<view class="mao">：</view>
-					<view class="content">{{user.USER_ADD_TIME}} </view>
-				</view>
+<view wx:if="{{isLoad && isAdmin}}" class="admin-user-page">
+	<view class="page-title">
+		<view>
+			<view class="title-main">用户详情</view>
+			<view class="title-sub">管理员视角查看用户资料、行为数据与记录明细</view>
+		</view>
+		<view class="status-pill {{user.statusClass}}">{{user.statusText}}</view>
+	</view>
+
+	<view class="profile-panel">
+		<view class="profile-left">
+			<image class="avatar loading" mode="aspectFill" src="{{user.USER_PIC || '/projects/culture/images/none.png'}}" bindtap="url" data-url="{{user.USER_PIC}}" data-type="image"></image>
+			<view class="identity">
+				<view class="name">{{user.USER_NAME || '未填写昵称'}}</view>
+				<view class="uid">ID：{{user.miniOpenId}}</view>
+			</view>
+		</view>
+		<view class="profile-right">
+			<view class="field">
+				<view class="label">手机号</view>
+				<view class="value" bindtap="url" data-type="phone" data-url="{{user.USER_MOBILE}}">{{user.mobileText}}</view>
+			</view>
+			<view class="field">
+				<view class="label">注册时间</view>
+				<view class="value">{{user.USER_ADD_TIME}}</view>
+			</view>
+			<view class="field">
+				<view class="label">性别</view>
+				<view class="value">{{user.sexText}}</view>
+			</view>
+			<view class="field">
+				<view class="label">最近登录</view>
+				<view class="value">{{user.USER_LOGIN_TIME || '未登录'}}</view>
 			</view>
 		</view>
 	</view>
-	<view style="height:30rpx;"></view>
 
-	<import src="../../../../../../tpls/public/admin_forms_detail_tpl.wxml" />
-	<template is="adminFormsDetailTpl" data="{{forms:user.USER_FORMS}}" />
+	<view class="stats-grid">
+		<view class="stat-card">
+			<view class="stat-icon icon-favor"></view>
+			<view>
+				<view class="stat-num">{{user.userData.counts.fav}}</view>
+				<view class="stat-label">收藏景点数量</view>
+			</view>
+		</view>
+		<view class="stat-card">
+			<view class="stat-icon icon-activity"></view>
+			<view>
+				<view class="stat-num">{{user.userData.counts.join}}</view>
+				<view class="stat-label">报名活动数量</view>
+			</view>
+		</view>
+		<view class="stat-card">
+			<view class="stat-icon icon-writefill"></view>
+			<view>
+				<view class="stat-num">{{user.userData.counts.info}}</view>
+				<view class="stat-label">发布游记数量</view>
+			</view>
+		</view>
+		<view class="stat-card">
+			<view class="stat-icon icon-footprint"></view>
+			<view>
+				<view class="stat-num">{{user.userData.counts.history}}</view>
+				<view class="stat-label">浏览记录数量</view>
+			</view>
+		</view>
+	</view>
 
+	<view class="records-panel">
+		<view class="tabs">
+			<view wx:for="{{tabs}}" wx:key="key" class="tab {{activeTab===item.key?'active':''}}" data-tab="{{item.key}}" bindtap="bindTabTap">{{item.title}}</view>
+		</view>
 
+		<view class="toolbar">
+			<view class="search-box">
+				<text class="icon-search"></text>
+				<input value="{{keyword}}" placeholder="搜索标题、分类、状态" bindinput="bindKeywordInput" />
+			</view>
+			<picker mode="selector" range="{{filterOptions}}" bindchange="bindFilterChange">
+				<view class="filter-btn">{{filter==='all'?filterOptions[0]:filter}} <text class="icon-unfold"></text></view>
+			</picker>
+			<view wx:if="{{activeTab==='history'}}" class="clear-btn" bindtap="bindHistoryClearTap">清空历史</view>
+		</view>
+
+		<view wx:if="{{activeTab==='fav'}}" class="table">
+			<view class="table-head fav">
+				<view>景点图片</view><view>景点名称</view><view>分类</view><view>收藏时间</view><view>操作</view>
+			</view>
+			<view wx:for="{{currentRecords}}" wx:key="FAV_ID" class="table-row fav">
+				<image class="thumb" src="{{item.thumb}}" mode="aspectFill"></image>
+				<view class="cell-title">{{item.title}}</view>
+				<view class="muted">{{item.typeDesc}}</view>
+				<view class="muted">{{item.time}}</view>
+				<view class="link" bindtap="bindRecordDetailTap" data-url="{{item.path}}">查看详情</view>
+			</view>
+		</view>
+
+		<view wx:if="{{activeTab==='join'}}" class="table">
+			<view class="table-head join">
+				<view>活动名称</view><view>活动时间</view><view>报名时间</view><view>状态</view><view>操作</view>
+			</view>
+			<view wx:for="{{currentRecords}}" wx:key="ACTIVITY_JOIN_ID" class="table-row join">
+				<view class="cell-title">{{item.title}}</view>
+				<view class="muted">{{item.activityTime}}</view>
+				<view class="muted">{{item.time}}</view>
+				<view><text class="tag {{item.statusClass}}">{{item.statusText}}</text></view>
+				<view class="link" bindtap="bindRecordDetailTap" data-url="{{item.path}}">查看详情</view>
+			</view>
+		</view>
+
+		<view wx:if="{{activeTab==='info'}}" class="table">
+			<view class="table-head info">
+				<view>游记标题</view><view>发布时间</view><view>浏览量</view><view>状态</view><view>操作</view>
+			</view>
+			<block wx:for="{{currentRecords}}" wx:key="_id">
+				<view class="table-row info" bindtap="bindInfoExpandTap" data-id="{{item._id}}">
+					<view class="cell-title">{{item.title}}</view>
+					<view class="muted">{{item.time}}</view>
+					<view class="muted">{{item.viewCount}}</view>
+					<view><text class="tag {{item.statusClass}}">{{item.statusText}}</text></view>
+					<view class="link" catchtap="bindRecordDetailTap" data-url="{{item.path}}">查看详情</view>
+				</view>
+				<view wx:if="{{expandedInfoId===item._id}}" class="expand-box">
+					<image class="cover" src="{{item.cover}}" mode="aspectFill"></image>
+					<view class="expand-main">
+						<view class="summary">{{item.summary}}</view>
+						<view class="meta">图片数量：{{item.imageCount}} 张</view>
+					</view>
+				</view>
+			</block>
+		</view>
+
+		<view wx:if="{{activeTab==='history'}}" class="table">
+			<view class="table-head history">
+				<view>内容名称</view><view>类型</view><view>浏览时间</view><view>操作</view>
+			</view>
+			<view wx:for="{{currentRecords}}" wx:key="HISTORY_ID" class="table-row history">
+				<view class="cell-title">{{item.title}}</view>
+				<view class="muted">{{item.typeDesc}}</view>
+				<view class="muted">{{item.time}}</view>
+				<view class="row-actions">
+					<text class="link" bindtap="bindRecordDetailTap" data-url="{{item.path}}">查看</text>
+					<text class="danger-link" catchtap="bindHistoryDelTap" data-id="{{item._id}}">删除</text>
+				</view>
+			</view>
+		</view>
+
+		<view wx:if="{{currentRecords.length===0}}" class="empty">暂无匹配记录</view>
+
+		<view class="pager">
+			<view class="pager-btn {{currentPage<=1?'disabled':''}}" bindtap="bindPrevPageTap">上一页</view>
+			<view class="pager-info">共 {{currentTotal}} 条 · 第 {{currentPage}} / {{totalPage}} 页</view>
+			<view class="pager-btn {{currentPage>=totalPage?'disabled':''}}" bindtap="bindNextPageTap">下一页</view>
+		</view>
+	</view>
 </view>

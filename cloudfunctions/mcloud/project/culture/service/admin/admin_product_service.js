@@ -16,24 +16,38 @@ class AdminProductService extends BaseProjectAdminService {
 
 	/** 推荐首页SETUP */
 	async vouchProduct(id, vouch) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		await ProductModel.edit({ _id: id, _pid: this.getProjectId() }, { PRODUCT_VOUCH: Number(vouch) });
 	}
 
 	/**添加 */
 	async insertProduct({
-
+		title,
+		cateId,
+		cateName,
+		order,
+		forms = []
 	}) {
-
-
-		// 重复性判断
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		const data = {
+			_pid: this.getProjectId(),
+			PRODUCT_TITLE: title,
+			PRODUCT_CATE_ID: cateId,
+			PRODUCT_CATE_NAME: cateName,
+			PRODUCT_ORDER: Number(order),
+			PRODUCT_STATUS: ProductModel.STATUS.COMM,
+			PRODUCT_VOUCH: 0,
+			PRODUCT_FORMS: forms,
+			PRODUCT_OBJ: dataUtil.dbForms2Obj(forms)
+		};
+		return await ProductModel.insert(data);
 	}
 
 	/**删除数据 */
 	async delProduct(id) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
-
-
+		const product = await ProductModel.getOne({ _id: id, _pid: this.getProjectId() });
+		if (!product) return;
+		cloudUtil.handlerCloudFilesForForms(product.PRODUCT_FORMS || [], []);
+		if (product.PRODUCT_QR) cloudUtil.deleteFiles([product.PRODUCT_QR]);
+		await ProductModel.del({ _id: id, _pid: this.getProjectId() });
 	}
 
 	/**获取信息 */
@@ -52,20 +66,34 @@ class AdminProductService extends BaseProjectAdminService {
 	// 更新forms信息
 	async updateProductForms({
 		id,
-		hasImageForms
+		hasImageForms = []
 	}) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
-
+		const product = await ProductModel.getOne({ _id: id, _pid: this.getProjectId() });
+		if (!product) return;
+		await ProductModel.edit({ _id: id, _pid: this.getProjectId() }, {
+			PRODUCT_FORMS: hasImageForms,
+			PRODUCT_OBJ: dataUtil.dbForms2Obj(hasImageForms)
+		});
 	}
 
 
 	/**更新数据 */
 	async editProduct({
-
+		id,
+		title,
+		cateId,
+		cateName,
+		order,
+		forms = []
 	}) {
-
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
-
+		await ProductModel.edit({ _id: id, _pid: this.getProjectId() }, {
+			PRODUCT_TITLE: title,
+			PRODUCT_CATE_ID: cateId,
+			PRODUCT_CATE_NAME: cateName,
+			PRODUCT_ORDER: Number(order),
+			PRODUCT_FORMS: forms,
+			PRODUCT_OBJ: dataUtil.dbForms2Obj(forms)
+		});
 	}
 
 	/**取得分页列表 */
@@ -128,19 +156,17 @@ class AdminProductService extends BaseProjectAdminService {
 
 	/**修改状态 */
 	async statusProduct(id, status) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		await ProductModel.edit({ _id: id, _pid: this.getProjectId() }, { PRODUCT_STATUS: Number(status) });
 	}
 
 	/**置顶与排序设定 */
 	async sortProduct(id, sort) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
-
+		await ProductModel.edit({ _id: id, _pid: this.getProjectId() }, { PRODUCT_ORDER: Number(sort) });
 	}
 
 	/**首页设定 */
 	async vouchProduct(id, vouch) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
-
+		await ProductModel.edit({ _id: id, _pid: this.getProjectId() }, { PRODUCT_VOUCH: Number(vouch) });
 	}
 }
 

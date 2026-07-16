@@ -174,11 +174,11 @@ class AdminActivityController extends BaseProjectAdminController {
 		await contentCheck.checkTextMultiAdmin(input);
 
 		let service = new AdminActivityService();
-		let result = service.editActivity(input);
+		let result = await service.editActivity(input);
 
 		this.logOther('修改了活动《' + input.title + '》');
 
-		return result;
+		return result || {};
 	}
 
 	async clearActivityAll() {

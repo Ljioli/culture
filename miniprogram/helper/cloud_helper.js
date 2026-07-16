@@ -63,7 +63,6 @@ async function callCloudData(route, params = {}, options) {
 }
 
 function callCloud(route, params = {}, options) {
-
 	let title = '加载中';
 	let hint = true;
 
@@ -116,20 +115,25 @@ function callCloud(route, params = {}, options) {
 				params
 			},
 			success: function (res) {
-				if (res.result.code == CODE.LOGIC || res.result.code == CODE.DATA) {
+				let result = res && res.result;
+				if (!result || typeof result.code === 'undefined') {
+					reject(new Error('云函数返回数据为空'));
+					return;
+				}
+				if (result.code == CODE.LOGIC || result.code == CODE.DATA) {
 					console.log(res)
 					// 逻辑错误&数据校验错误 
 					if (hint) {
 						wx.showModal({
 							title: '温馨提示',
-							content: res.result.msg,
+							content: result.msg,
 							showCancel: false
 						});
 					}
 
-					reject(res.result);
+					reject(result);
 					return;
-				} else if (res.result.code == CODE.ADMIN_ERROR) {
+				} else if (result.code == CODE.ADMIN_ERROR) {
 					// 后台登录错误
 					wx.reLaunch({
 						url: pageHelper.fmtURLByPID('/pages/admin/index/login/admin_login'),
@@ -137,7 +141,7 @@ function callCloud(route, params = {}, options) {
 					//reject(res.result);
 					return;
 
-				} else if (res.result.code == CODE.WORK_ERROR) {
+				} else if (result.code == CODE.WORK_ERROR) {
 					// 服务者登录错误
 					wx.reLaunch({
 						url: pageHelper.fmtURLByPID('/pages/work/index/login/work_login'),
@@ -145,7 +149,7 @@ function callCloud(route, params = {}, options) {
 					//reject(res.result);
 					return;
 				}
-				else if (res.result.code != CODE.SUCC) {
+				else if (result.code != CODE.SUCC) {
 					if (hint) {
 						wx.showModal({
 							title: '温馨提示',
@@ -153,11 +157,11 @@ function callCloud(route, params = {}, options) {
 							showCancel: false
 						});
 					}
-					reject(res.result);
+					reject(result);
 					return;
 				}
 
-				resolve(res.result);
+				resolve(result);
 			},
 			fail: function (err) {
 				if (hint) {
@@ -189,7 +193,7 @@ function callCloud(route, params = {}, options) {
 							showCancel: false
 						});
 				}
-				reject(err.result);
+				reject(err || new Error('云函数调用失败'));
 				return;
 			},
 			complete: function (res) {
@@ -250,7 +254,7 @@ async function dataList(that, listName, route, params, options, isReverse = fals
 		oldTotal = that.data[listName].total;
 	params.oldTotal = oldTotal;
 
-	// 云函数调用 
+	// 云函数调用
 	await callCloud(route, params, options).then(function (res) {
 		console.log('cloud begin');
 
@@ -320,8 +324,8 @@ async function transTempPics(imgList, dir, id, prefix = '') {
 			}).then(res => {
 				imgList[i] = res.fileID;
 			}).catch(error => {
-				// handle error TODO:剔除图片
 				console.error(error);
+				throw error;
 			})
 		}
 	}
@@ -381,6 +385,7 @@ async function transCoverTempPics(imgList, dir, id, route) {
 		return res.data.urls;
 	} catch (err) {
 		console.error(err);
+		throw err;
 	}
 }
 
@@ -393,30 +398,39 @@ async function transFormsTempPics(forms, dir, id, route) {
 	let hasImageForms = [];
 	for (let k = 0; k < forms.length; k++) {
 		if (forms[k].type == 'image') {
+			if (!hasTempFile(forms[k].val)) continue;
 			forms[k].val = await transTempPics(forms[k].val, dir, id, 'image');
 			hasImageForms.push(forms[k]);
 		}
 		else if (forms[k].type == 'content') {
 			let contentVal = forms[k].val;
+			let hasTempContent = false;
 			for (let j in contentVal) {
-				if (contentVal[j].type == 'img') {
+				if (contentVal[j].type == 'img' && hasTempFile([contentVal[j].val])) {
 					let ret = await transTempPics([contentVal[j].val], dir, id, 'content');
 					contentVal[j].val = ret[0];
+					hasTempContent = true;
 				}
 			}
-			hasImageForms.push(forms[k]);
+			if (hasTempContent) hasImageForms.push(forms[k]);
 		}
 		else if (forms[k].type == 'file') {
 			let fileVal = forms[k].val;
+			let hasTempFileVal = false;
 			for (let j in fileVal) {
+				if (!hasTempFile([fileVal[j].path])) continue;
 				let ret = await transTempPics([fileVal[j].path], dir, id, 'file');
 				fileVal[j].path = ret[0];
+				hasTempFileVal = true;
 			}
-			hasImageForms.push(forms[k]);
+			if (hasTempFileVal) hasImageForms.push(forms[k]);
 		}
 	}
 
-	if (hasImageForms.length == 0) return;
+	if (hasImageForms.length == 0) {
+		wx.hideLoading();
+		return;
+	}
 
 	let params = {
 		id,
@@ -427,7 +441,16 @@ async function transFormsTempPics(forms, dir, id, route) {
 		if (route) await callCloudSumbit(route, params);
 	} catch (err) {
 		console.error(err);
+		throw err;
 	}
+}
+
+function hasTempFile(fileList = []) {
+	if (!Array.isArray(fileList)) return false;
+	return fileList.some(filePath => {
+		if (!filePath || typeof filePath !== 'string') return false;
+		return filePath.includes('tmp') || filePath.includes('temp') || filePath.includes('wxfile');
+	});
 }
 
 async function transTempPicOne(img, dir, id, isCheck = true) {

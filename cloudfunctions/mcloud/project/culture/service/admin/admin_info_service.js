@@ -15,24 +15,27 @@ class AdminInfoService extends BaseProjectAdminService {
 
 	/** 推荐首页SETUP */
 	async vouchInfo(id, vouch) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		await InfoModel.edit({ _id: id, _pid: this.getProjectId() }, { INFO_VOUCH: Number(vouch) });
 	}
 
 	/**置顶与排序设定 */
 	async sortInfo(id, sort) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		await InfoModel.edit({ _id: id, _pid: this.getProjectId() }, { INFO_ORDER: Number(sort) });
 	}
 
 	/**删除数据 */
 	async delInfo(id) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
-
+		const info = await InfoModel.getOne({ _id: id, _pid: this.getProjectId() });
+		if (!info) return;
+		cloudUtil.handlerCloudFilesForForms(info.INFO_FORMS || [], []);
+		if (info.INFO_QR) cloudUtil.deleteFiles([info.INFO_QR]);
+		await InfoModel.del({ _id: id, _pid: this.getProjectId() });
 	}
 
 
 	/**修改状态 */
 	async statusInfo(id, status) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		await InfoModel.edit({ _id: id, _pid: this.getProjectId() }, { INFO_STATUS: Number(status) });
 	}
 
 

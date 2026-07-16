@@ -22,7 +22,7 @@ class InfoController extends BaseProjectController {
 		let input = this.validateData(rules);
 
 		let service = new InfoService();
-		let info = await service.viewInfo(input.id);
+		let info = await service.viewInfo(input.id, this._userId);
 
 		if (info) {
 			info.INFO_ADD_TIME = timeUtil.timestamp2Time(info.INFO_ADD_TIME, 'Y-M-D h:m');
@@ -53,6 +53,7 @@ class InfoController extends BaseProjectController {
 	}
 
 	async insertInfo() {
+		let request = this._request || {};
 
 		// 数据校验 
 		let rules = {
@@ -61,7 +62,11 @@ class InfoController extends BaseProjectController {
 
 
 		// 取得数据
-		let input = this.validateData(rules);
+		let input = Object.assign({}, request, {
+			formCateId: request.formCateId !== undefined ? request.formCateId : (request.cateId || 0),
+			formOrder: request.formOrder !== undefined ? request.formOrder : (request.order !== undefined ? request.order : 9999),
+			forms: Array.isArray(request.forms) ? request.forms : (Array.isArray(request.formForms) ? request.formForms : [])
+		});
 
 		// 内容审核
 		await contentCheck.checkTextMultiClient(input);
@@ -90,23 +95,29 @@ class InfoController extends BaseProjectController {
 		await contentCheck.checkTextMultiClient(input);
 
 		let service = new InfoService();
+		input.userId = this._userId;
 		return await service.updateInfoForms(input);
 	}
 
 	async editInfo() {
+		let request = this._request || {};
 
 		let rules = {
 
 		};
 
 		// 取得数据
-		let input = this.validateData(rules);
+		let input = Object.assign({}, request, {
+			formCateId: request.formCateId !== undefined ? request.formCateId : (request.cateId || 0),
+			formOrder: request.formOrder !== undefined ? request.formOrder : (request.order !== undefined ? request.order : 9999),
+			forms: Array.isArray(request.forms) ? request.forms : (Array.isArray(request.formForms) ? request.formForms : [])
+		});
 
 		// 内容审核
 		await contentCheck.checkTextMultiClient(input);
 
 		let service = new InfoService();
-		let result = service.editInfo(this._userId, input);
+		let result = await service.editInfo(this._userId, input);
 
 
 		return result;
@@ -138,7 +149,7 @@ class InfoController extends BaseProjectController {
 		for (let k = 0; k < list.length; k++) {
 			list[k].my = (this._userId === list[k].INFO_USER_ID);
 			list[k].INFO_ADD_TIME = timeUtil.timestamp2Time(list[k].INFO_ADD_TIME, 'Y-M-D h:m:s');
-			list[k].INFO_REPLY_TIME = timeUtil.timestamp2Time(list[k].INFO_REPLY_TIME, 'Y-M-D h:m:s');
+			if (list[k].INFO_REPLY_TIME) list[k].INFO_REPLY_TIME = timeUtil.timestamp2Time(list[k].INFO_REPLY_TIME, 'Y-M-D h:m:s');
 		}
 
 		result.list = list;
@@ -173,7 +184,7 @@ class InfoController extends BaseProjectController {
 		for (let k = 0; k < list.length; k++) {
 			list[k].my = (this._userId === list[k].INFO_USER_ID);
 			list[k].INFO_ADD_TIME = timeUtil.timestamp2Time(list[k].INFO_ADD_TIME, 'Y-M-D h:m:s');
-			list[k].INFO_REPLY_TIME = timeUtil.timestamp2Time(list[k].INFO_REPLY_TIME, 'Y-M-D h:m:s');
+			if (list[k].INFO_REPLY_TIME) list[k].INFO_REPLY_TIME = timeUtil.timestamp2Time(list[k].INFO_REPLY_TIME, 'Y-M-D h:m:s');
 		}
 
 		result.list = list;

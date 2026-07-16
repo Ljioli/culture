@@ -12,7 +12,7 @@
 			<view class="item" wx:for="{{dataList.list}}" wx:key="key">
 				<view class="no">{{index+1}}</view>
 				<view class="header">
-					<view class="left text-cut">{{item.USER_NAME}}
+					<view class="left text-cut">{{item.USER_NAME || '未填写昵称'}}
 					</view>
 					<view class="right">
 						<text wx:if="{{item.USER_STATUS==1}}" class="text-black">「正常」</text>

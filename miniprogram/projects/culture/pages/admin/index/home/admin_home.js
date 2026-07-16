@@ -109,6 +109,19 @@ Page({
 		pageHelper.showConfirm('您确认清除所有首页推荐？', cb)
 	},
 
+	bindSeedTap: function () {
+		pageHelper.showConfirm('将新增攻略、公告、活动和游记演示数据，不会删除已有数据。继续吗？', async () => {
+			try {
+				const res = await cloudHelper.callCloudSumbit('admin/seed_demo', {}, { title: '生成中' });
+				const data = res.data || {};
+				let content = `用户${data.users || 0}个，攻略${data.product || 0}条，公告${data.news || 0}条，活动${data.activity || 0}条，游记${data.info || 0}条，评论${data.comments || 0}条，收藏${data.favorites || 0}条，报名${data.joins || 0}条`;
+				if (data.fatalError) content += `\n\n主体数据错误：${data.fatalError}`;
+				if (data.relationError) content += `\n\n评论/收藏/报名错误：${data.relationError}`;
+				wx.showModal({ title: '生成完成', showCancel: false, content });
+			} catch (err) { console.error(err); }
+		});
+	},
+
 	bindExitTap: function (e) {
 
 		let callback = function () {

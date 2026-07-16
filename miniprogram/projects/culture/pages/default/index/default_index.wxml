@@ -50,7 +50,7 @@
 
 	<!-- 旅行攻略 begin -->
 	<view class="area">
-		<view class="hot-line" bindtap="url" data-url="../../product/index/product_index">
+		<view class="hot-line" bindtap="url" data-type="relaunch" data-url="../../product/index/product_index">
 			<view class="left">旅行攻略</view>
 			<view class="right">更多»</view>
 		</view>
@@ -75,7 +75,7 @@
 
 	<!-- 活动推荐 begin -->
 	<view class="area">
-		<view class="hot-line" bindtap="url" data-url="../../activity/index/activity_index">
+		<view class="hot-line" bindtap="url" data-type="relaunch" data-url="../../activity/index/activity_index">
 			<view class="left">活动推荐</view>
 			<view class="right">更多»</view>
 		</view>
@@ -98,7 +98,7 @@
 
 	<!--游记begin-->
 	<view class="area">
-		<view class="hot-line" bindtap="url" data-url="../../meet/index/meet_index?id=1">
+		<view class="hot-line" bindtap="url" data-type="relaunch" data-url="../../info/index/info_index">
 			<view class="left">热门游记</view>
 			<view class="right">更多»</view>
 		</view>
@@ -125,14 +125,14 @@
 			<!-- 重点是mode为widthFix -->
 			<view class="content-item-img">
 				<view class="mark">{{INFO_CATE_NAME}}</view>
-				<image src="{{INFO_OBJ.cover}}" class="content-item-img loading" lazy-load="{{true}}" mode="widthFix" />
+				<image src="{{INFO_OBJ.cover[0] || '/projects/culture/images/none.png'}}" class="content-item-img loading" lazy-load="{{true}}" mode="widthFix" />
 			</view>
 
 			<view class="content-item-box">
 				<view class="line1 content-cut-one">{{INFO_OBJ.title}}</view>
 				<view class="line2">
-					<image src="{{user.USER_PIC}}" mode="aspectFill" lazy-load="{{true}}" class="avatar loading" />
-					<view class="name text-cut">{{user.USER_NAME}}</view>
+					<image src="{{user.USER_PIC || '/projects/culture/images/none.png'}}" mode="aspectFill" lazy-load="{{true}}" class="avatar loading" />
+					<view class="name text-cut">{{user.USER_NAME || '文旅用户'}}</view>
 				</view>
 			</view>
 		</view>

@@ -89,6 +89,9 @@
 	</view>
 
 	<view class="comm-list menu margin-bottom-xl">
+		<view class="item arrow" bindtap="bindSeedTap">
+			<view class="content"><text class="icon-add text-green"></text><text class="text-black">初始化课堂演示数据</text></view>
+		</view>
 		<view class="item arrow" bindtap="bindMoreTap">
 			<view class="content">
 				<text class="icon-settings text-grey"></text>

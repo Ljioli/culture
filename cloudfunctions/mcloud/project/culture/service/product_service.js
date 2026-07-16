@@ -7,11 +7,12 @@
 const BaseProjectService = require('./base_project_service.js');
 const util = require('../../../framework/utils/util.js');
 const ProductModel = require('../model/product_model.js');
+const HistoryService = require('./history_service.js');
 
 class ProductService extends BaseProjectService {
 
 	/** 浏览资讯信息 */
-	async viewProduct(id) {
+	async viewProduct(id, userId) {
 
 		let fields = '*';
 
@@ -23,6 +24,7 @@ class ProductService extends BaseProjectService {
 		if (!product) return null;
 
 		ProductModel.inc(id, 'PRODUCT_VIEW_CNT', 1);
+		HistoryService.record(userId, 'product', id, product.PRODUCT_TITLE, '/projects/culture/pages/product/detail/product_detail?id=' + id);
 
 		return product;
 	}

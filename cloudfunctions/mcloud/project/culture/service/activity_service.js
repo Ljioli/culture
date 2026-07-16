@@ -12,6 +12,7 @@ const timeUtil = require('../../../framework/utils/time_util.js');
 const ActivityModel = require('../model/activity_model.js');
 const UserModel = require('../model/user_model.js');
 const ActivityJoinModel = require('../model/activity_join_model.js');
+const HistoryService = require('./history_service.js');
 
 class ActivityService extends BaseProjectService {
 
@@ -23,7 +24,7 @@ class ActivityService extends BaseProjectService {
 			return '活动停止';
 		else if (activity.ACTIVITY_END <= timestamp)
 			return '活动结束';
-		else if (activity.ACTIVITY_STOP <= timestamp)
+		else if (activity.ACTIVITY_STOP > 0 && activity.ACTIVITY_STOP <= timestamp)
 			return '报名结束';
 		else if (activity.ACTIVITY_MAX_CNT > 0
 			&& activity.ACTIVITY_JOIN_CNT >= activity.ACTIVITY_MAX_CNT)
@@ -43,6 +44,7 @@ class ActivityService extends BaseProjectService {
 		}
 		let activity = await ActivityModel.getOne(where, fields);
 		if (!activity) return null;
+		HistoryService.record(userId, 'activity', id, activity.ACTIVITY_TITLE, '/projects/culture/pages/activity/detail/activity_detail?id=' + id);
 
 		ActivityModel.inc(id, 'ACTIVITY_VIEW_CNT', 1);
 
@@ -155,8 +157,9 @@ class ActivityService extends BaseProjectService {
 		let fields = 'ACTIVITY_JOIN_OBJ,ACTIVITY_JOIN_IS_CHECKIN,ACTIVITY_JOIN_REASON,ACTIVITY_JOIN_ACTIVITY_ID,ACTIVITY_JOIN_STATUS,ACTIVITY_JOIN_ADD_TIME,user.USER_PIC,user.USER_NAME,user.USER_OBJ';
 
 		let where = {
+			_pid: this.getProjectId(),
 			ACTIVITY_JOIN_ACTIVITY_ID: activityId,
-			ACTIVITY_JOIN_STATUS: ActivityModel.STATUS.COMM
+			ACTIVITY_JOIN_STATUS: ActivityJoinModel.STATUS.SUCC
 		};
 
 		let joinParams = {
@@ -247,12 +250,16 @@ class ActivityService extends BaseProjectService {
 		let fields = '*';
 
 		let where = {
+			_pid: this.getProjectId(),
 			_id: activityJoinId,
 			ACTIVITY_JOIN_USER_ID: userId
 		};
 		let activityJoin = await ActivityJoinModel.getOne(where, fields);
 		if (activityJoin) {
-			activityJoin.activity = await ActivityModel.getOne(activityJoin.ACTIVITY_JOIN_ACTIVITY_ID, 'ACTIVITY_TITLE,ACTIVITY_START,ACTIVITY_END');
+			activityJoin.activity = await ActivityModel.getOne({
+				_pid: this.getProjectId(),
+				_id: activityJoin.ACTIVITY_JOIN_ACTIVITY_ID
+			}, 'ACTIVITY_TITLE,ACTIVITY_START,ACTIVITY_END');
 		}
 		return activityJoin;
 	}
@@ -260,8 +267,51 @@ class ActivityService extends BaseProjectService {
 	//################## 报名 
 	// 报名 
 	async activityJoin(userId, activityId, forms) {
+		let activity = await ActivityModel.getOne({
+			_pid: this.getProjectId(),
+			_id: activityId,
+			ACTIVITY_STATUS: ActivityModel.STATUS.COMM
+		});
+		if (!activity) this.AppError('该活动不存在或者已经关闭');
+		if (activity.ACTIVITY_END && activity.ACTIVITY_END <= this._timestamp)
+			this.AppError('该活动已经结束，无法报名');
+		if (activity.ACTIVITY_STOP > 0 && activity.ACTIVITY_STOP <= this._timestamp)
+			this.AppError('该活动已经截止报名');
 
-		 
+		let activeWhere = {
+			_pid: this.getProjectId(),
+			ACTIVITY_JOIN_ACTIVITY_ID: activityId,
+			ACTIVITY_JOIN_USER_ID: userId,
+			ACTIVITY_JOIN_STATUS: ['in', [ActivityJoinModel.STATUS.WAIT, ActivityJoinModel.STATUS.SUCC]]
+		};
+		if (await ActivityJoinModel.count(activeWhere) > 0)
+			this.AppError('您已经报名过该活动');
+
+		if (activity.ACTIVITY_MAX_CNT > 0) {
+			let joinCount = await ActivityJoinModel.count({
+				_pid: this.getProjectId(),
+				ACTIVITY_JOIN_ACTIVITY_ID: activityId,
+				ACTIVITY_JOIN_STATUS: ['in', [ActivityJoinModel.STATUS.WAIT, ActivityJoinModel.STATUS.SUCC]]
+			});
+			if (joinCount >= activity.ACTIVITY_MAX_CNT) this.AppError('活动报名人数已满');
+		}
+
+		forms = Array.isArray(forms) ? forms : [];
+		let status = Number(activity.ACTIVITY_CHECK_SET) === 1 ? ActivityJoinModel.STATUS.WAIT : ActivityJoinModel.STATUS.SUCC;
+		let data = {
+			_pid: this.getProjectId(),
+			ACTIVITY_JOIN_ACTIVITY_ID: activityId,
+			ACTIVITY_JOIN_IS_ADMIN: 0,
+			ACTIVITY_JOIN_CODE: dataUtil.genRandomIntString(15),
+			ACTIVITY_JOIN_IS_CHECKIN: 0,
+			ACTIVITY_JOIN_USER_ID: userId,
+			ACTIVITY_JOIN_FORMS: forms,
+			ACTIVITY_JOIN_OBJ: dataUtil.dbForms2Obj(forms),
+			ACTIVITY_JOIN_STATUS: status
+		};
+		let id = await ActivityJoinModel.insert(data);
+		await this.statActivityJoin(activityId);
+		return { id, activityJoinId: id, check: status === ActivityJoinModel.STATUS.WAIT ? 1 : 0 };
 
 	}
 
@@ -269,6 +319,7 @@ class ActivityService extends BaseProjectService {
 	async statActivityJoin(id) {
 		// 报名数
 		let where = {
+			_pid: this.getProjectId(),
 			ACTIVITY_JOIN_ACTIVITY_ID: id,
 			ACTIVITY_JOIN_STATUS: ['in', [ActivityJoinModel.STATUS.WAIT, ActivityJoinModel.STATUS.SUCC]]
 		}
@@ -277,6 +328,7 @@ class ActivityService extends BaseProjectService {
 
 		// 用户列表
 		where = {
+			_pid: this.getProjectId(),
 			ACTIVITY_JOIN_ACTIVITY_ID: id,
 			ACTIVITY_JOIN_STATUS: ActivityJoinModel.STATUS.SUCC
 		}
@@ -296,7 +348,7 @@ class ActivityService extends BaseProjectService {
 			list[k] = list[k].user;
 		}
 
-		await ActivityModel.edit(id, { ACTIVITY_JOIN_CNT: cnt, ACTIVITY_USER_LIST: list });
+		await ActivityModel.edit({ _id: id, _pid: this.getProjectId() }, { ACTIVITY_JOIN_CNT: cnt, ACTIVITY_USER_LIST: list });
 	}
 
 	/**  报名前获取关键信息 */
@@ -304,6 +356,7 @@ class ActivityService extends BaseProjectService {
 		let fields = 'ACTIVITY_JOIN_FORMS, ACTIVITY_TITLE';
 
 		let where = {
+			_pid: this.getProjectId(),
 			_id: activityId,
 			ACTIVITY_STATUS: ActivityModel.STATUS.COMM
 		}
@@ -315,7 +368,9 @@ class ActivityService extends BaseProjectService {
 		// 取出本人最近一次的填写表单
 
 		let whereMy = {
+			_pid: this.getProjectId(),
 			ACTIVITY_JOIN_USER_ID: userId,
+			ACTIVITY_JOIN_ACTIVITY_ID: activityId,
 		}
 		let orderByMy = {
 			ACTIVITY_JOIN_ADD_TIME: 'desc'
@@ -367,7 +422,7 @@ class ActivityService extends BaseProjectService {
 
 	/** 用户自助签到 */
 	async myJoinSelf(userId, activityId) {
-		let activity = await ActivityModel.getOne(activityId);
+		let activity = await ActivityModel.getOne({ _id: activityId, _pid: this.getProjectId() });
 		if (!activity)
 			this.AppError('活动不存在或者已经关闭');
 
@@ -378,12 +433,14 @@ class ActivityService extends BaseProjectService {
 			this.AppError('仅在活动当天可以签到，当前签到码的日期是' + day);
 
 		let whereSucc = {
+			ACTIVITY_JOIN_ACTIVITY_ID: activityId,
 			ACTIVITY_JOIN_USER_ID: userId,
 			ACTIVITY_JOIN_STATUS: ActivityJoinModel.STATUS.SUCC
 		}
 		let cntSucc = await ActivityJoinModel.count(whereSucc);
 
 		let whereCheckin = {
+			ACTIVITY_JOIN_ACTIVITY_ID: activityId,
 			ACTIVITY_JOIN_USER_ID: userId,
 			ACTIVITY_JOIN_IS_CHECKIN: 1,
 			ACTIVITY_JOIN_STATUS: ActivityJoinModel.STATUS.SUCC
@@ -398,6 +455,7 @@ class ActivityService extends BaseProjectService {
 			ret = '您已签到，无须重复签到，请在「个人中心 - 我的活动报名」查看详情~';
 		} else {
 			let where = {
+				ACTIVITY_JOIN_ACTIVITY_ID: activityId,
 				ACTIVITY_JOIN_USER_ID: userId,
 				ACTIVITY_JOIN_IS_CHECKIN: 0,
 				ACTIVITY_JOIN_STATUS: ActivityJoinModel.STATUS.SUCC
@@ -465,7 +523,6 @@ class ActivityService extends BaseProjectService {
 			if (!retList.includes(day)) retList.push(day);
 		}
 
-		return [timeUtil.time('Y-M-D'), timeUtil.time('Y-M-D', 86400), timeUtil.time('Y-M-D', 86400 * 2), timeUtil.time('Y-M-D', 86400 * 3), timeUtil.time('Y-M-D', 86400 * 4), timeUtil.time('Y-M-D', 86400 * 5), timeUtil.time('Y-M-D', 86400 * 6)]; //for demo
 		return retList;
 	}
 

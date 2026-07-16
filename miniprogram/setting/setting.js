@@ -1,6 +1,6 @@
 ﻿module.exports = {
 	//### 环境相关 
-	CLOUD_ID: 'cloud1-3go08kosfd9d453c', //云服务id ,本地测试环境 
+	CLOUD_ID: 'cloud1-d8g2l931c5a5311ea', //云服务环境 ID
 
 	// #### 版本信息 
 	VER: 'build 2023.10.01',
@@ -8,7 +8,7 @@
 
 	// #### 系统参数 
 	IS_SUB: false, //分包模式 
-	IS_DEMO: false, //是否演示版  
+	IS_DEMO: false, //正式云开发模式
 
 	MOBILE_CHECK: false, //手机号码是否真实性校验
 

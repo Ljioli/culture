@@ -7,11 +7,12 @@
 const BaseProjectService = require('./base_project_service.js');
 const util = require('../../../framework/utils/util.js');
 const NewsModel = require('../model/news_model.js');
+const HistoryService = require('./history_service.js');
 
 class NewsService extends BaseProjectService {
 
 	/** 浏览资讯信息 */
-	async viewNews(id) {
+	async viewNews(id, userId) {
 
 		let fields = '*';
 
@@ -21,6 +22,7 @@ class NewsService extends BaseProjectService {
 		}
 		let news = await NewsModel.getOne(where, fields);
 		if (!news) return null;
+		HistoryService.record(userId, 'news', id, news.NEWS_TITLE, '/projects/culture/pages/news/detail/news_detail?id=' + id);
 
 
 

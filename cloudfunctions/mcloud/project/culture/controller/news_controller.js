@@ -75,7 +75,7 @@ class NewsController extends BaseProjectController {
 		let input = this.validateData(rules);
 
 		let service = new NewsService();
-		let news = await service.viewNews(input.id);
+		let news = await service.viewNews(input.id, this._userId);
 
 		if (news) {
 			// 显示转换 

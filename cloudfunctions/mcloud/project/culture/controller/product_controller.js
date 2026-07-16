@@ -56,7 +56,7 @@ class ProductController extends BaseProjectController {
 		let input = this.validateData(rules);
 
 		let service = new ProductService();
-		let product = await service.viewProduct(input.id);
+		let product = await service.viewProduct(input.id, this._userId);
 
 		if (product) {
 			// 显示转换 

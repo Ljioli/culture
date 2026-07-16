@@ -155,7 +155,8 @@ class AdminMgrService extends BaseProjectAdminService {
 
 	/** 删除管理员 */
 	async delMgr(id, myAdminId) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		if (id == myAdminId) this.AppError('不能删除当前登录管理员');
+		await AdminModel.del({ _id: id, _pid: this.getProjectId() });
 	}
 
 	/** 添加新的管理员 */
@@ -165,13 +166,18 @@ class AdminMgrService extends BaseProjectAdminService {
 		phone,
 		password
 	}) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
-
+		const exists = await AdminModel.getOne({ _pid: this.getProjectId(), ADMIN_NAME: name }, '_id');
+		if (exists) this.AppError('管理员账号已存在');
+		return await AdminModel.insert({
+			_pid: this.getProjectId(), ADMIN_NAME: name, ADMIN_DESC: desc || '', ADMIN_PHONE: phone || '',
+			ADMIN_PASSWORD: md5Lib.md5(password), ADMIN_STATUS: 1, ADMIN_TYPE: 0
+		});
 	}
 
 	/** 修改状态 */
 	async statusMgr(id, status, myAdminId) {
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		if (id == myAdminId && Number(status) === 0) this.AppError('不能停用当前登录管理员');
+		await AdminModel.edit({ _id: id, _pid: this.getProjectId() }, { ADMIN_STATUS: Number(status) });
 	}
 
 
@@ -195,14 +201,16 @@ class AdminMgrService extends BaseProjectAdminService {
 		phone,
 		password
 	}) {
-
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		const data = { ADMIN_NAME: name, ADMIN_DESC: desc || '', ADMIN_PHONE: phone || '' };
+		if (password) data.ADMIN_PASSWORD = md5Lib.md5(password);
+		await AdminModel.edit({ _id: id, _pid: this.getProjectId() }, data);
 	}
 
 	/** 修改自身密码 */
 	async pwdtMgr(adminId, oldPassword, password) {
-
-		this.AppError('[文旅]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		const admin = await AdminModel.getOne({ _id: adminId, _pid: this.getProjectId() }, 'ADMIN_PASSWORD');
+		if (!admin || admin.ADMIN_PASSWORD !== md5Lib.md5(oldPassword)) this.AppError('旧密码不正确');
+		await AdminModel.edit({ _id: adminId, _pid: this.getProjectId() }, { ADMIN_PASSWORD: md5Lib.md5(password) });
 	}
 }
 
