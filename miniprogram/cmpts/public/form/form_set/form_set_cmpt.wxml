@@ -1,4 +1,4 @@
-<view class="form-group arrow {{cur==index?'cur':''}}" hoverClass="form-group-active" wx:for="{{fields}}" wx:key="key" style="padding-left:10rpx">
+<view class="form-group arrow {{cur==index?'cur':''}}" hover-class="form-group-active" wx:for="{{fields}}" wx:key="key" style="padding-left:10rpx">
 	<view class="field-oprt">
 		<view bindtap="bindUpTap" wx:if="{{index>0}}" data-idx="{{index}}"><text class="icon-refresharrow up"></text></view>
 		<view bindtap="bindDownTap" wx:if="{{index<fields.length-1}}" data-idx="{{index}}"><text class="icon-refresharrow"></text></view>  

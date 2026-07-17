@@ -1,7 +1,7 @@
 <view class="main {{skin.IS_SUB?'sub-margin-bottom':''}}">
 
 	<!--top area begin-->
-	<view class="upside upside-shadow" bindtap="url" data-url="{{user?'../edit/my_edit':'../reg/my_reg'}}">
+	<view class="upside upside-shadow" bindtap="bindProfileTap">
 		<image mode="widthFix" lazy-load class="upImg loading" src="../../../images/my.jpg" />
 
 	</view>
@@ -11,7 +11,7 @@
 	<!--down area begin-->
 	<view class="down padding-project">
 
-		<view class="user-bar" bindtap="url" data-url="{{user?'../edit/my_edit':'../reg/my_reg'}}">
+		<view class="user-bar" bindtap="bindProfileTap">
 			<view class="pic" >
 				<image wx:if="{{!user.USER_PIC}}" mode="aspectFit" src="../../../images/tabbar/my_cur.png" />
 				<image wx:else src="{{user.USER_PIC}}" class="av loading" mode="aspectFill" />
@@ -31,6 +31,13 @@
 
 		<!--base begin -->
 		<view class="comm-list menu">
+			<view wx:if="{{!user}}" class="item arrow" bindtap="bindLoginEntryTap">
+				<view class="content">
+					<text class="icon-my my-icon-project"></text>
+					<text class="text-black">微信登录/注册</text>
+				</view>
+			</view>
+
 			<view class="item arrow" bindtap="url" data-url="../../activity/my_join_list/activity_my_join_list">
 				<view class="content">
 					<text class="icon-activity my-icon-project"></text>
@@ -66,6 +73,13 @@
 				</view>
 			</view>
 
+
+			<view wx:if="{{user}}" class="item arrow" bindtap="bindLogoutTap">
+				<view class="content">
+					<text class="icon-exit my-icon-project"></text>
+					<text class="text-black">退出登录</text>
+				</view>
+			</view>
 
 			<view wx:if="{{skin.IS_SUB}}" class="item arrow" bindtap="bindSetTap">
 				<view class="content">

@@ -477,53 +477,72 @@ class ActivityService extends BaseProjectService {
 		let start = timeUtil.time2Timestamp(day);
 		let end = start + 86400 * 1000 - 1;
 		let where = {
+			_pid: this.getProjectId(),
 			ACTIVITY_STATUS: ActivityModel.STATUS.COMM,
-			//ACTIVITY_START: ['between', start, end], //for demo
+			ACTIVITY_START: ['<=', end],
+			ACTIVITY_END: ['>=', start],
 		};
 
 		let orderBy = {
 			'ACTIVITY_ORDER': 'asc',
+			'ACTIVITY_START': 'asc',
 			'ACTIVITY_ADD_TIME': 'desc'
 		};
 
-		let fields = 'ACTIVITY_TITLE,ACTIVITY_START,ACTIVITY_OBJ.cover';
-
+		let fields = 'ACTIVITY_TITLE,ACTIVITY_START,ACTIVITY_END,ACTIVITY_OBJ.cover';
 		let list = await ActivityModel.getAll(where, fields, orderBy);
 
 		let retList = [];
-
 		for (let k = 0; k < list.length; k++) {
+			let activity = list[k];
+			let showStart = Math.max(activity.ACTIVITY_START || start, start);
+			let showEnd = Math.min(activity.ACTIVITY_END || end, end);
+			if (showStart > showEnd) continue;
 
 			let node = {};
-			node.timeDesc = timeUtil.timestamp2Time(list[k].ACTIVITY_START, 'h:m');
-			node.title = list[k].ACTIVITY_TITLE;
-			node.pic = list[k].ACTIVITY_OBJ.cover[0];
-			node._id = list[k]._id;
+			node.timeDesc = timeUtil.timestamp2Time(showStart, 'h:m');
+			if (showEnd > showStart) {
+				node.timeDesc += ' - ' + timeUtil.timestamp2Time(showEnd, 'h:m');
+			}
+			node.title = activity.ACTIVITY_TITLE;
+			node.pic = (activity.ACTIVITY_OBJ && activity.ACTIVITY_OBJ.cover && activity.ACTIVITY_OBJ.cover[0]) || '';
+			node._id = activity._id;
 			retList.push(node);
-
 		}
+
 		return retList;
 	}
 
 	/**
-	 * 获取从某天开始可报名的日期
-	 * @param {*} fromDay  日期 Y-M-D
+	 * ?????????????
+	 * @param {*} fromDay  ?? Y-M-D
 	 */
 	async getActivityHasDaysFromDay(fromDay) {
+		let fromTimestamp = timeUtil.time2Timestamp(fromDay);
 		let where = {
-			ACTIVITY_START: ['>=', timeUtil.time2Timestamp(fromDay)],
+			_pid: this.getProjectId(),
+			ACTIVITY_STATUS: ActivityModel.STATUS.COMM,
+			ACTIVITY_END: ['>=', fromTimestamp],
 		};
 
-		let fields = 'ACTIVITY_START';
+		let fields = 'ACTIVITY_START,ACTIVITY_END';
 		let list = await ActivityModel.getAllBig(where, fields);
 
-		let retList = [];
+		let daySet = new Set();
 		for (let k = 0; k < list.length; k++) {
-			let day = timeUtil.timestamp2Time(list[k].ACTIVITY_START, 'Y-M-D');
-			if (!retList.includes(day)) retList.push(day);
+			let startTime = Math.max(list[k].ACTIVITY_START || fromTimestamp, fromTimestamp);
+			let endTime = list[k].ACTIVITY_END || list[k].ACTIVITY_START || fromTimestamp;
+			if (endTime < fromTimestamp) continue;
+
+			let curDay = timeUtil.timestamp2Time(startTime, 'Y-M-D');
+			let endDay = timeUtil.timestamp2Time(endTime, 'Y-M-D');
+			while (curDay <= endDay) {
+				daySet.add(curDay);
+				curDay = timeUtil.timestamp2Time(timeUtil.time2Timestamp(curDay) + 86400 * 1000, 'Y-M-D');
+			}
 		}
 
-		return retList;
+		return Array.from(daySet).sort();
 	}
 
 

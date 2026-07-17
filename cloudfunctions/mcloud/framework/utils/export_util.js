@@ -97,7 +97,7 @@ async function exportDataExcel(key, title, total, data, options = {}) {
 		cloudPath: xlsPath,
 		fileContent: buffer, //excel二进制文件
 	});
-	if (!upload || !upload.fileID) return;
+	if (!upload || !upload.fileID) return { total: 0, url: '' };
 
 	// 入导出表 
 	let dataExport = {

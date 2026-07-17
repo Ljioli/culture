@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Notes: 用户管理
  * Ver : CCMiniCloud Framework 2.0.1 ALL RIGHTS RESERVED BY cclinux0730 (wechat)
  * Date: 01-22  07:48:00 
@@ -22,8 +22,6 @@ const HistoryModel = require('../../model/history_model.js');
 const EXPORT_USER_DATA_KEY = 'EXPORT_USER_DATA';
 
 class AdminUserService extends BaseProjectAdminService {
-
-
 	/** 获得某个用户信息 */
 	async getUser({
 		userId,
@@ -58,7 +56,6 @@ class AdminUserService extends BaseProjectAdminService {
 		try {
 			historyList = await HistoryModel.getAll({ HISTORY_USER_ID: userId }, '*', { HISTORY_ADD_TIME: 'desc' }, 100);
 		} catch (err) {
-			// 兼容尚未在云开发控制台创建 bx_history 的旧环境。
 			historyList = [];
 		}
 		const typeDesc = { product: '旅行攻略', activity: '活动', info: '游记', news: '公告/服务' };
@@ -97,25 +94,23 @@ class AdminUserService extends BaseProjectAdminService {
 
 	/** 取得用户分页列表 */
 	async getUserList({
-		search, // 搜索条件
-		sortType, // 搜索菜单
-		sortVal, // 搜索菜单
-		orderBy, // 排序
-		whereEx, //附加查询条件 
+		search,
+		sortType,
+		sortVal,
+		orderBy,
+		whereEx,
 		page,
 		size,
 		oldTotal = 0
 	}) {
-
 		orderBy = orderBy || {
 			USER_ADD_TIME: 'desc'
 		};
 		let fields = '*';
 
-
 		let where = {};
 		where.and = {
-			_pid: this.getProjectId() //复杂的查询在此处标注PID
+			_pid: this.getProjectId()
 		};
 
 		if (util.isDefined(search) && search) {
@@ -129,9 +124,7 @@ class AdminUserService extends BaseProjectAdminService {
 				USER_MEMO: ['like', search]
 			},
 			];
-
 		} else if (sortType && util.isDefined(sortVal)) {
-			// 搜索菜单
 			switch (sortType) {
 				case 'status':
 					where.and.USER_STATUS = Number(sortVal);
@@ -143,11 +136,7 @@ class AdminUserService extends BaseProjectAdminService {
 			}
 		}
 		let result = await UserModel.getList(where, fields, orderBy, page, size, true, oldTotal, false);
-
-
-		// 为导出增加一个参数condition
 		result.condition = encodeURIComponent(JSON.stringify(where));
-
 		return result;
 	}
 
@@ -158,33 +147,61 @@ class AdminUserService extends BaseProjectAdminService {
 		});
 	}
 
-	/**删除用户 */
+	/** 删除用户 */
 	async delUser(id) {
 		await UserModel.del({ _id: id, _pid: this.getProjectId() });
 	}
 
 	// #####################导出用户数据
-
-	/**获取用户数据 */
 	async getUserDataURL() {
 		return await exportUtil.getExportDataURL(EXPORT_USER_DATA_KEY);
 	}
 
-	/**删除用户数据 */
 	async deleteUserDataExcel() {
 		return await exportUtil.deleteDataExcel(EXPORT_USER_DATA_KEY);
 	}
 
-	/**导出用户数据 */
-	async exportUserDataExcel(condition, fields) {
-		let where = {};
-		try { where = JSON.parse(decodeURIComponent(condition || '{}')); } catch (e) { where = {}; }
-		const list = await UserModel.getAll(where, fields || '*', { USER_ADD_TIME: 'asc' }, 10000);
-		const rows = [['用户昵称', '手机号', '状态', '注册时间']];
-		for (const item of list) rows.push([item.USER_NAME || '', item.USER_MOBILE || '', item.USER_STATUS, timeUtil.timestamp2Time(item.USER_ADD_TIME)]);
-		return await exportUtil.exportDataExcel(EXPORT_USER_DATA_KEY, '用户数据', list.length, rows);
+	_getUserFormValue(user, field) {
+		if (!field || !field.mark) return '';
+		const forms = Array.isArray(user.USER_FORMS) ? user.USER_FORMS : [];
+		const form = forms.find(item => item && item.mark === field.mark);
+		if (!form) return '';
+		if (Array.isArray(form.val)) return form.val.join('、');
+		if (form.val === null || form.val === undefined) return '';
+		return String(form.val);
 	}
 
+	async exportUserDataExcel(condition, fields) {
+		let where = {};
+		try {
+			where = JSON.parse(decodeURIComponent(condition || '{}'));
+		} catch (e) {
+			where = {};
+		}
+
+		const exportFields = Array.isArray(fields) ? fields : [];
+		const list = await UserModel.getAll(where, '*', { USER_ADD_TIME: 'asc' }, 10000);
+		const header = ['用户昵称', '手机号', '状态', '注册时间'];
+		for (const field of exportFields) {
+			header.push(field.title || field.mark || '字段');
+		}
+
+		const rows = [header];
+		for (const item of list) {
+			const row = [
+				item.USER_NAME || '',
+				item.USER_MOBILE || '',
+				item.USER_STATUS,
+				timeUtil.timestamp2Time(item.USER_ADD_TIME),
+			];
+			for (const field of exportFields) {
+				row.push(this._getUserFormValue(item, field));
+			}
+			rows.push(row);
+		}
+
+		return await exportUtil.exportDataExcel(EXPORT_USER_DATA_KEY, '用户数据', list.length, rows);
+	}
 }
 
 module.exports = AdminUserService;

@@ -5,7 +5,7 @@ const ProjectBiz = require('../../../biz/project_biz.js');
 
 Page({
 	/**
-	 * 页面的初始数据
+	 * 椤甸潰鐨勫垵濮嬫暟鎹?
 	 */
 	data: {
 		isLoad: false,
@@ -16,7 +16,7 @@ Page({
 	},
 
 	/**
-	 * 生命周期函数--监听页面加载
+	 * 鐢熷懡鍛ㄦ湡鍑芥暟--鐩戝惉椤甸潰鍔犺浇
 	 */
 	onLoad: async function (options) {
 		ProjectBiz.initPage(this);
@@ -44,9 +44,9 @@ Page({
 		}
 	},
 
-	_loadHasList: async function () {
+	_loadHasList: async function (day = timeHelper.time('Y-M-D')) {
 		let params = {
-			day: timeHelper.time('Y-M-D')
+			day
 		}
 		let opts = {
 			title: 'bar'
@@ -63,55 +63,55 @@ Page({
 	},
 
 	/**
-	 * 生命周期函数--监听页面初次渲染完成
+	 * 鐢熷懡鍛ㄦ湡鍑芥暟--鐩戝惉椤甸潰鍒濇娓叉煋瀹屾垚
 	 */
 	onReady: function () {
 
 	},
 
 	/**
-	 * 生命周期函数--监听页面显示
+	 * 鐢熷懡鍛ㄦ湡鍑芥暟--鐩戝惉椤甸潰鏄剧ず
 	 */
 	onShow: async function () {
 		if (!this.data.day) {
 			this.setData({
 				day: timeHelper.time('Y-M-D')
 			}, async () => {
-				await this._loadHasList();
+				await this._loadHasList(this.data.day);
 				await this._loadList();
 			});
 		}
 		else {
-			await this._loadHasList();
+			await this._loadHasList(this.data.day);
 			await this._loadList();
 		}
 	},
 
 	/**
-	 * 生命周期函数--监听页面隐藏
+	 * 鐢熷懡鍛ㄦ湡鍑芥暟--鐩戝惉椤甸潰闅愯棌
 	 */
 	onHide: function () {
 
 	},
 
 	/**
-	 * 生命周期函数--监听页面卸载
+	 * 鐢熷懡鍛ㄦ湡鍑芥暟--鐩戝惉椤甸潰鍗歌浇
 	 */
 	onUnload: function () {
 
 	},
 
 	/**
-	 * 页面相关事件处理函数--监听用户下拉动作
+	 * 椤甸潰鐩稿叧浜嬩欢澶勭悊鍑芥暟--鐩戝惉鐢ㄦ埛涓嬫媺鍔ㄤ綔
 	 */
 	onPullDownRefresh: async function () {
-		await this._loadHasList();
+		await this._loadHasList(this.data.day);
 		await this._loadList();
 		wx.stopPullDownRefresh();
 	},
 
 	/**
-	 * 用户点击右上角分享
+	 * 鐢ㄦ埛鐐瑰嚮鍙充笂瑙掑垎浜?
 	 */
 	onShareAppMessage: function () {
 
@@ -127,9 +127,11 @@ Page({
 
 	},
 
-	bindMonthChangeCmpt: function (e) { 
+	bindMonthChangeCmpt: async function (e) {
+		let yearMonth = e.detail.yearMonth;
+		if (!yearMonth) return;
+		await this._loadHasList(yearMonth + '-01');
 	},
-
 	url: async function (e) {
 		pageHelper.url(e, this);
 	},

@@ -9,6 +9,9 @@
 			<view class="title"><text user-select="true">{{product.PRODUCT_TITLE}}</text></view>
 				<view class="time"> {{product.PRODUCT_CATE_NAME}} {{product.PRODUCT_ADD_TIME}}</view> 
 
+			<view wx:if="{{product.PRODUCT_OBJ.desc}}" class="summary">
+				<text user-select="{{true}}">{{product.PRODUCT_OBJ.desc}}</text>
+			</view>
 
 			<block wx:for="{{product.PRODUCT_OBJ.content}}" wx:key="key">
 				<view class="content" wx:if="{{item.type=='text'}}">

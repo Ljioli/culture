@@ -20,6 +20,36 @@ const exportUtil = require("../../../../framework/utils/export_util.js");
 const EXPORT_ACTIVITY_JOIN_DATA_KEY = "EXPORT_ACTIVITY_JOIN_DATA";
 
 class AdminActivityService extends BaseProjectAdminService {
+  async _refreshActivityJoinStats(activityId) {
+    if (!activityId) return;
+    let service = new ActivityService();
+    await service.statActivityJoin(activityId);
+  }
+
+  async _getJoinById(activityJoinId) {
+    return await ActivityJoinModel.getOne({
+      _id: activityJoinId,
+      _pid: this.getProjectId(),
+    });
+  }
+
+  async _assertCheckinAllowed(join) {
+    if (!join) this.AppError("未找到有效的报名记录");
+    if (Number(join.ACTIVITY_JOIN_STATUS) !== ActivityJoinModel.STATUS.SUCC)
+      this.AppError("仅报名成功的记录允许核销");
+
+    const activity = await ActivityModel.getOne({
+      _id: join.ACTIVITY_JOIN_ACTIVITY_ID,
+      _pid: this.getProjectId(),
+    });
+    if (!activity) this.AppError("活动不存在");
+
+    const day = timeUtil.timestamp2Time(activity.ACTIVITY_START, "Y-M-D");
+    const today = timeUtil.time("Y-M-D");
+    if (day !== today) this.AppError("仅可在活动当天核销");
+
+    return activity;
+  }
   /**取得分页列表 */
   async getAdminActivityList({
     search, // 搜索条件
@@ -175,10 +205,7 @@ class AdminActivityService extends BaseProjectAdminService {
   /** 清空 */
   async clearActivityAll(activityId) {
     await ActivityJoinModel.del({ ACTIVITY_JOIN_ACTIVITY_ID: activityId });
-    await ActivityModel.edit(
-      { _id: activityId, _pid: this.getProjectId() },
-      { ACTIVITY_JOIN_CNT: 0, ACTIVITY_USER_LIST: [] },
-    );
+    await this._refreshActivityJoinStats(activityId);
   }
 
   /**删除数据 */
@@ -303,8 +330,24 @@ class AdminActivityService extends BaseProjectAdminService {
   }
 
   _toObject(val) {
+    if (!val) return {};
+
+    if (typeof val === "string") {
+      try {
+        val = JSON.parse(val);
+      } catch (err) {
+        return {};
+      }
+    }
+
     if (!val || typeof val !== "object" || Array.isArray(val)) return {};
-    return val;
+
+    return {
+      name: val.name || "",
+      address: val.address || "",
+      latitude: this._toNumber(val.latitude, 0),
+      longitude: this._toNumber(val.longitude, 0),
+    };
   }
 
   async statusActivity(id, status) {
@@ -373,12 +416,16 @@ class AdminActivityService extends BaseProjectAdminService {
   /**修改报名状态
    */
   async statusActivityJoin(activityJoinId, status, reason = "") {
+    const join = await this._getJoinById(activityJoinId);
     await ActivityJoinModel.edit(
       { _id: activityJoinId, _pid: this.getProjectId() },
       {
         ACTIVITY_JOIN_STATUS: Number(status),
         ACTIVITY_JOIN_REASON: reason || "",
       },
+    );
+    await this._refreshActivityJoinStats(
+      join && join.ACTIVITY_JOIN_ACTIVITY_ID,
     );
   }
 
@@ -388,25 +435,29 @@ class AdminActivityService extends BaseProjectAdminService {
       {
         _pid: this.getProjectId(),
         ACTIVITY_JOIN_ACTIVITY_ID: activityId,
-        ACTIVITY_JOIN_STATUS: ActivityJoinModel.STATUS.SUCC,
+        ACTIVITY_JOIN_STATUS: [
+          "in",
+          [ActivityJoinModel.STATUS.WAIT, ActivityJoinModel.STATUS.SUCC],
+        ],
       },
       {
         ACTIVITY_JOIN_STATUS: ActivityJoinModel.STATUS.ADMIN_CANCEL,
         ACTIVITY_JOIN_REASON: reason || "管理员取消报名",
       },
     );
-    await ActivityModel.edit(
-      { _id: activityId, _pid: this.getProjectId() },
-      { ACTIVITY_JOIN_CNT: 0, ACTIVITY_USER_LIST: [] },
-    );
+    await this._refreshActivityJoinStats(activityId);
   }
 
   /** 删除报名 */
   async delActivityJoin(activityJoinId) {
+    const join = await this._getJoinById(activityJoinId);
     await ActivityJoinModel.del({
       _id: activityJoinId,
       _pid: this.getProjectId(),
     });
+    await this._refreshActivityJoinStats(
+      join && join.ACTIVITY_JOIN_ACTIVITY_ID,
+    );
   }
 
   /** 自助签到码 */
@@ -429,6 +480,9 @@ class AdminActivityService extends BaseProjectAdminService {
 
   /** 管理员按钮核销 */
   async checkinActivityJoin(activityJoinId, flag) {
+    const join = await this._getJoinById(activityJoinId);
+    if (!join) this.AppError("未找到有效的报名记录");
+    if (Number(flag) === 1) await this._assertCheckinAllowed(join);
     const data =
       Number(flag) === 1
         ? {
@@ -454,6 +508,7 @@ class AdminActivityService extends BaseProjectAdminService {
       ACTIVITY_JOIN_STATUS: ActivityJoinModel.STATUS.SUCC,
     });
     if (!join) this.AppError("未找到有效的报名记录");
+    await this._assertCheckinAllowed(join);
     await this.checkinActivityJoin(join._id, 1);
   }
 

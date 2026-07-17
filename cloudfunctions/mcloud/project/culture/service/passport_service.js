@@ -26,7 +26,7 @@ class PassportService extends BaseProjectService {
 		}
 		let cnt = await UserModel.count(where);
 		if (cnt > 0)
-			return await this.login(userId);
+			this.AppError('当前微信号已绑定账号，请直接登录已有账号');
 
 		where = {
 			USER_MOBILE: mobile

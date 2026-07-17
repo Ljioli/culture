@@ -197,20 +197,24 @@ page {
 
 .content-list {
 	display: flex;
-	justify-content: space-between;
-	padding: 20rpx 12rpx 30rpx;
 	box-sizing: border-box;
+	padding: 20rpx 24rpx 0;
 }
 
 .content-left,
 .content-right {
-	width: 49%;
+	width: calc(50% - 8rpx);
+	box-sizing: border-box;
+}
+
+.content-left {
+	margin-right: 16rpx;
 }
 
 .content-item {
-	margin: 10rpx 0 20rpx;
 	background: #fff;
 	width: 100%;
+	margin-bottom: 16rpx;
 	border-radius: 10rpx;
 	position: relative;
 	overflow: hidden;
@@ -244,9 +248,9 @@ page {
 .content-item-box {
 	font-size: 24rpx;
 	color: #333;
-	padding: 10rpx 10rpx 20rpx;
+	padding: 10rpx;
 	box-sizing: border-box;
-	display: flex;
+  display: flex;
 	flex-direction: column;
 }
 

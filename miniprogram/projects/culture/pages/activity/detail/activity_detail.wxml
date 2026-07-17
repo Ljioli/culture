@@ -10,7 +10,7 @@
 
 		<view class="title">{{activity.ACTIVITY_TITLE}}</view>
 
-		<view class="user-pic" wx:if="{{activity.ACTIVITY_USER_LIST.length>0}}">
+		<view class="user-pic" wx:if="{{activity.ACTIVITY_IS_MENU==1 && activity.ACTIVITY_USER_LIST.length>0}}">
 			<view class="line1">
 				<image wx:for="{{activity.ACTIVITY_USER_LIST}}" mode="aspectFill" wx:key="k" src="{{item.USER_PIC}}" class="loading" lazy-load="{{true}}" />
 				<image wx:for="{{6-activity.ACTIVITY_USER_LIST.length}}" wx:key="k" mode="aspectFill" src="../../../images/none.png" />
@@ -94,9 +94,7 @@
 
 	</view>
 
-	<view style="height:200rpx"></view>
-
-
+	
 	<cmpt-detail mode="mode2" topBtnShow="{{topBtnShow}}" tag="{{activity.myActivityJoinTag}}" oid="{{activity._id}}" cate="{{activity.ACTIVITY_CATE_NAME}}" title="{{activity.ACTIVITY_TITLE}}" cover="{{activity.ACTIVITY_OBJ.cover[0]}}" qr="{{activity.ACTIVITY_QR}}" desc="查看活动详情" bg="{{skin.PROJECT_COLOR}}">
 		<view class="bottom-line">
 			<view bindtap="url" data-url="../../comment/list/comment_list?id={{id}}&type=activity" class="join comment   margin-right">评论 <text wx:if="{{activity.ACTIVITY_COMMENT_CNT>0}}">({{activity.ACTIVITY_COMMENT_CNT}})</text></view>

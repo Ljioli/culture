@@ -33,7 +33,7 @@ Page({
 		}
 		let user = await cloudHelper.callCloudData('passport/my_detail', {}, opts);
 		if (!user)
-			return wx.redirectTo({ url: '../reg/my_reg' });
+			return pageHelper.redirectSmart('../reg/my_reg');
 
 		this.setData({
 			isLoad: true,

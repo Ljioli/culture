@@ -38,8 +38,15 @@ Page({
 	 * 生命周期函数--监听页面显示
 	 */
 	onShow: async function () {  
-		PassportBiz.loginSilenceMust(this); 
-		this._loadUser();
+		if (PassportBiz.isLogin()) {
+			await PassportBiz.loginSilenceMust(this); 
+			this._loadUser();
+		} else {
+			this.setData({
+				user: null,
+				isLogin: false
+			});
+		}
 	},
 
 	/**
@@ -97,6 +104,54 @@ Page({
 
 	url: function (e) {
 		pageHelper.url(e, this);
+	},
+
+	bindProfileTap: async function () {
+		if (this.data.user) {
+			wx.navigateTo({
+				url: '../edit/my_edit'
+			});
+			return;
+		}
+
+		wx.navigateTo({
+			url: '../reg/my_reg'
+		});
+	},
+
+	bindLoginEntryTap: async function () {
+		let opts = {
+			title: 'bar'
+		};
+		let user = await cloudHelper.callCloudData('passport/my_detail', {}, opts);
+		if (!user) {
+			wx.navigateTo({
+				url: '../reg/my_reg'
+			});
+			return;
+		}
+
+		let logged = await PassportBiz.loginSilenceMust(this);
+		if (!logged) {
+			pageHelper.showNoneToast('登录失败，请稍后重试');
+			return;
+		}
+
+		await this._loadUser();
+		pageHelper.showSuccToast('已登录当前微信绑定账号');
+	},
+
+	bindLogoutTap: function () {
+		if (!PassportBiz.isLogin()) return;
+
+		pageHelper.showConfirm('确认退出当前登录吗？', () => {
+			PassportBiz.clearToken();
+			this.setData({
+				user: null,
+				isLogin: false
+			});
+			pageHelper.showSuccToast('已退出登录');
+		});
 	},
 
 	bindSetTap: function (e, skin) {

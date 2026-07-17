@@ -2,6 +2,24 @@
 <view wx:if="{{isLoad===false}}" class="margin-top load loading text-l load-project"></view>
 
 <view wx:if="{{isLoad}}" class="main padding-project">
-	<include src="../edit/user_form.wxml" /> 
-	<button bindtap="bindSubmitTap" class="btn-base btn-project shadow">提交注册</button>
+	<block wx:if="{{hasAccount}}">
+		<view class="comm-list">
+			<view class="item">
+				<view class="content">
+					<text class="text-black">当前微信号已绑定账号：{{existUserName}}</text>
+				</view>
+			</view>
+			<view class="item">
+				<view class="content">
+					<text class="text-grey">本项目采用微信一键登录，一个微信号仅对应一个用户账号，不支持账号密码切换登录。</text>
+				</view>
+			</view>
+		</view>
+		<button bindtap="bindLoginTap" class="btn-base btn-project shadow">登录已有账号</button>
+	</block>
+	<block wx:else>
+		<include src="../edit/user_form.wxml" />
+		<view class="margin-top-s text-grey text-s">本项目采用微信一键登录，一个微信号仅可注册一个用户账号。</view>
+		<button bindtap="bindSubmitTap" class="btn-base btn-project shadow">提交注册</button>
+	</block>
 </view>

@@ -84,27 +84,57 @@ class ActivityBiz extends BaseBiz {
 	}
 
 
-	static openMap(address, geo) {
-		if (geo && geo.latitude)
-			wx.openLocation({
-				latitude: geo.latitude,
-				longitude: geo.longitude,
-				address,
-				scale: 18
-			})
-		else {
-			wx.setClipboardData({
-				data: address,
-				success(res) {
-					wx.getClipboardData({
-						success(res) {
-							pageHelper.showNoneToast('已复制到剪贴板，请在地图APP里查询');
-						}
-					})
-				}
-			});
-		}
+	static _toNumber(value) {
+		const num = Number(value);
+		return Number.isFinite(num) ? num : 0;
 	}
+
+	static _parseGeo(geo) {
+		if (!geo) return null;
+
+		if (typeof geo === 'string') {
+			try {
+				geo = JSON.parse(geo);
+			} catch (err) {
+				return null;
+			}
+		}
+
+		if (!geo || typeof geo !== 'object') return null;
+
+		const latitude = this._toNumber(geo.latitude || geo.lat);
+		const longitude = this._toNumber(geo.longitude || geo.lng);
+		if (!latitude || !longitude) return null;
+
+		return {
+			latitude,
+			longitude,
+			name: geo.name || '',
+			address: geo.address || ''
+		};
+	}
+
+	static openMap(address, geo) {
+		const location = this._parseGeo(geo);
+		if (location) {
+			wx.openLocation({
+				latitude: location.latitude,
+				longitude: location.longitude,
+				name: location.name || address,
+				address: location.address || address,
+				scale: 18
+			});
+			return;
+		}
+
+		if (address) {
+			pageHelper.showModal('\u6e29\u99a8\u63d0\u793a', '\u8be5\u6d3b\u52a8\u6682\u672a\u4fdd\u5b58\u5730\u56fe\u5750\u6807\uff0c\u6682\u65f6\u65e0\u6cd5\u76f4\u63a5\u5bfc\u822a\u3002\u8bf7\u5728\u540e\u53f0\u7f16\u8f91\u6d3b\u52a8\u65f6\u91cd\u65b0\u9009\u62e9\u5730\u56fe\u5b9a\u4f4d\u540e\u4fdd\u5b58\u3002');
+			return;
+		}
+
+		pageHelper.showNoneToast('\u6682\u65e0\u6d3b\u52a8\u5730\u70b9\u4fe1\u606f');
+	}
+	
 }
 
 module.exports = ActivityBiz;

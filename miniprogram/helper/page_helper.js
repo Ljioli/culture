@@ -93,6 +93,48 @@ function fmtURLByPID(url, PID = '') {
 	return url;
 }
 
+function isTabBarUrl(url = '') {
+	if (!url) return false;
+	return [
+		'/projects/culture/pages/default/index/default_index',
+		'/projects/culture/pages/product/index/product_index',
+		'/projects/culture/pages/activity/index/activity_index',
+		'/projects/culture/pages/info/index/info_index',
+		'/projects/culture/pages/my/index/my_index',
+		'../index/my_index',
+		'../../default/index/default_index',
+		'../../product/index/product_index',
+		'../../activity/index/activity_index',
+		'../../info/index/info_index'
+	].some(item => url === item || url.indexOf(item + '?') === 0);
+}
+
+function normalizeTabBarUrl(url = '') {
+	if (!url) return url;
+	const map = {
+		'../index/my_index': '/projects/culture/pages/my/index/my_index',
+		'../../default/index/default_index': '/projects/culture/pages/default/index/default_index',
+		'../../product/index/product_index': '/projects/culture/pages/product/index/product_index',
+		'../../activity/index/activity_index': '/projects/culture/pages/activity/index/activity_index',
+		'../../info/index/info_index': '/projects/culture/pages/info/index/info_index'
+	};
+	for (let key in map) {
+		if (url === key) return map[key];
+		if (url.indexOf(key + '?') === 0) return url.replace(key, map[key]);
+	}
+	return url;
+}
+
+function redirectSmart(url) {
+	if (!url) return;
+	if (isTabBarUrl(url)) {
+		url = normalizeTabBarUrl(url);
+		wx.switchTab({ url });
+		return;
+	}
+	wx.redirectTo({ url });
+}
+
 /** 定时器销毁 */
 function clearTimer(that, timerName = 'timer') {
 	if (helper.isDefined(that.data[timerName])) {
@@ -565,9 +607,7 @@ function url(e, that) {
 		}
 		case 'redirect': {
 			if (!url) return;
-			wx.redirectTo({
-				url
-			});
+			redirectSmart(url);
 			break;
 		}
 		case 'reLaunch':
@@ -696,9 +736,7 @@ function hint(msg, type = 'redirect') {
 			url: fmtURLByPID('/pages/public/hint?type=9&msg=' + encodeURIComponent(msg)),
 		});
 	else
-		wx.redirectTo({
-			url: fmtURLByPID('/pages/public/hint?type=9&msg=' + encodeURIComponent(msg)),
-		});
+		redirectSmart(fmtURLByPID('/pages/public/hint?type=9&msg=' + encodeURIComponent(msg)));
 }
 
 
@@ -714,9 +752,7 @@ function toURL(url) {
 		}
 	}
 
-	wx.redirectTo({
-		url,
-	});
+	redirectSmart(url);
 
 }
 
@@ -835,6 +871,9 @@ module.exports = {
 	getCurrentPageURL,
 	getCurrentPageUrlWithArgs,
 	fmtURLByPID,
+	isTabBarUrl,
+	normalizeTabBarUrl,
+	redirectSmart,
 
 	//### form
 	formClearFocus,

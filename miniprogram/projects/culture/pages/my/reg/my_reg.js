@@ -14,6 +14,8 @@ Page({
 	data: {
 		isLoad: false,
 		isEdit: false,
+		hasAccount: false,
+		existUserName: '',
 
 		mobileCheck: setting.MOBILE_CHECK
 	},
@@ -36,11 +38,21 @@ Page({
 		}
 		let user = await cloudHelper.callCloudData('passport/my_detail', {}, opts);
 		if (user) {
-			return wx.redirectTo({ url: '../index/my_index' });
+			if (PassportBiz.isLogin()) {
+				return pageHelper.redirectSmart('../index/my_index');
+			}
+
+			this.setData({
+				isLoad: true,
+				hasAccount: true,
+				existUserName: user.USER_NAME || '当前微信账号'
+			});
+			return;
 		}
 
 		this.setData({
 			isLoad: true,
+			hasAccount: false,
 
 			fields: projectSetting.USER_FIELDS,
 
@@ -48,6 +60,17 @@ Page({
 			formMobile: '',
 			formPic: '',
 			formForms: []
+		});
+	},
+
+	bindLoginTap: async function () {
+		let logged = await PassportBiz.loginSilenceMust(this);
+		if (!logged) {
+			pageHelper.showNoneToast('当前微信号未绑定可登录账号');
+			return;
+		}
+		pageHelper.showSuccToast('登录成功', 1200, () => {
+			pageHelper.redirectSmart('../index/my_index');
 		});
 	},
 
@@ -134,9 +157,7 @@ Page({
 						if (this.data.retUrl == 'back')
 							wx.navigateBack();
 						else if (this.data.retUrl)
-							wx.redirectTo({
-								url: this.data.retUrl,
-							})
+							pageHelper.redirectSmart(this.data.retUrl)
 						else
 							wx.reLaunch({ url: '../index/my_index' });
 					}

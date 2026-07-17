@@ -268,8 +268,8 @@ Page({
 
 		let sortMenus = [
 			{ label: '全部', type: '', value: '' },
-			{ label: '正常', type: 'status', value: 0 },
-			{ label: '停止', type: 'status', value: 1 },
+			{ label: '正常', type: 'status', value: 1 },
+			{ label: '停止', type: 'status', value: 0 },
 			{ label: '时间△', type: 'sort', value: 'INFO_ADD_TIME|asc' },
 			{ label: '时间▽', type: 'sort', value: 'INFO_ADD_TIME|desc' },
 		]

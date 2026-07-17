@@ -62,15 +62,18 @@ Page({
 
 	// Keep the selected values in the fields validated before submission.
 	bindStartTime: function (e) {
-		this.setData({ formStart: e.detail || '' });
+		let value = typeof e.detail === 'string' ? e.detail : '';
+		this.setData({ formStart: value });
 	},
 
 	bindEndTime: function (e) {
-		this.setData({ formEnd: e.detail || '' });
+		let value = typeof e.detail === 'string' ? e.detail : '';
+		this.setData({ formEnd: value });
 	},
 
 	bindStopTime: function (e) {
-		this.setData({ formStop: e.detail || '' });
+		let value = typeof e.detail === 'string' ? e.detail : '';
+		this.setData({ formStop: value });
 	},
 
 	_syncTimeFields: function () {
@@ -82,7 +85,8 @@ Page({
 		let values = {};
 		for (let field in pickerMap) {
 			let picker = this.selectComponent(pickerMap[field]);
-			if (picker && picker.getSelectedTime) values[field] = picker.getSelectedTime() || this.data[field] || '';
+			if (this.data[field]) values[field] = this.data[field];
+			else if (picker && picker.getSelectedTime) values[field] = picker.getSelectedTime() || '';
 		}
 		this.setData(values);
 		return values;
