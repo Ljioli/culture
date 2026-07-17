@@ -1,0 +1,39 @@
+<view class="main">
+	<view class="hero shadow-project">
+		<view class="hero-title">智能导览</view>
+		<view class="hero-desc">基于本地 Flask + LangChain + Ollama + Chroma 的问答演示，仅在开发环境下可用。</view>
+		<view class="hero-tip">启动本地服务后，可提问景区介绍、活动安排、开放时间、门票预约、交通停车、酒店餐饮等问题。</view>
+	</view>
+
+	<view class="quick shadow-project">
+		<view class="block-title">猜你想问</view>
+		<view class="chips">
+			<view class="chip" wx:for="{{quickQuestions}}" wx:key="index" data-question="{{item}}" bindtap="useQuickQuestion">{{item}}</view>
+		</view>
+	</view>
+
+	<scroll-view class="chat-list" scroll-y="true" scroll-with-animation="true" scroll-into-view="{{toView}}">
+		<view wx:for="{{messages}}" wx:key="id" id="{{item.id}}" class="message {{item.role}} {{item.isError ? 'error' : ''}}">
+			<view class="bubble">
+				<view class="role">{{item.role === 'assistant' ? '智能导览' : '你'}}</view>
+				<view class="content">{{item.content}}</view>
+				<view class="sources" wx:if="{{item.sources && item.sources.length}}">
+					<view class="sources-title">参考来源</view>
+					<view class="source-item" wx:for="{{item.sources}}" wx:key="index">{{item}}</view>
+				</view>
+			</view>
+		</view>
+
+		<view wx:if="{{loading}}" class="message assistant loading-msg" id="loading-msg">
+			<view class="bubble">
+				<view class="role">智能导览</view>
+				<view class="content">正在整理答案，请稍候...</view>
+			</view>
+		</view>
+	</scroll-view>
+
+	<view class="composer shadow-project">
+		<input class="input" maxlength="200" placeholder="请输入你的问题，例如：景区几点开门？" value="{{question}}" bindinput="bindInput" confirm-type="send" bindconfirm="sendQuestion" />
+		<view class="send-btn" bindtap="sendQuestion">发送</view>
+	</view>
+</view>

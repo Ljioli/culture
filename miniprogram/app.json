@@ -1,6 +1,7 @@
 {
 	"pages": [
 		"projects/culture/pages/default/index/default_index",
+		"projects/culture/pages/guide/index/guide_index",
 		"projects/culture/pages/about/index/about_index",
 		"projects/culture/pages/search/search",
 		"projects/culture/pages/my/index/my_index",

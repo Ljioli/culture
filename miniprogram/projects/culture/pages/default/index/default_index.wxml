@@ -45,6 +45,17 @@
 			</view>
 
 
+			<view class="guide-entry shadow-project" bindtap="url" data-url="../../guide/index/guide_index">
+				<view class="guide-entry-icon">
+					<image src="../../../images/menu/p2.png" />
+				</view>
+				<view class="guide-entry-copy">
+					<view class="guide-entry-title">????</view>
+					<view class="guide-entry-desc">AI ?????????????????????????????????????</view>
+				</view>
+				<view class="guide-entry-action">????</view>
+			</view>
+
 		</view>
 	</view>
 
