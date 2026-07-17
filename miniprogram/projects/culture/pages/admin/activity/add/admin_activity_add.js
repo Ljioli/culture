@@ -60,10 +60,39 @@ Page({
 		pageHelper.switchModel(this, e);
 	},
 
+	// Keep the selected values in the fields validated before submission.
+	bindStartTime: function (e) {
+		this.setData({ formStart: e.detail || '' });
+	},
+
+	bindEndTime: function (e) {
+		this.setData({ formEnd: e.detail || '' });
+	},
+
+	bindStopTime: function (e) {
+		this.setData({ formStop: e.detail || '' });
+	},
+
+	_syncTimeFields: function () {
+		const pickerMap = {
+			formStart: '#activity-start-time',
+			formEnd: '#activity-end-time',
+			formStop: '#activity-stop-time'
+		};
+		let values = {};
+		for (let field in pickerMap) {
+			let picker = this.selectComponent(pickerMap[field]);
+			if (picker && picker.getSelectedTime) values[field] = picker.getSelectedTime() || this.data[field] || '';
+		}
+		this.setData(values);
+		return values;
+	},
+
 	bindFormSubmit: async function () {
 		if (!AdminBiz.isAdmin(this)) return;
 
-		let data = this.data;
+		let timeFields = this._syncTimeFields();
+		let data = Object.assign({}, this.data, timeFields);
 		data = validate.check(data, AdminActivityBiz.CHECK_FORM, this);
 		if (!data) return;
 

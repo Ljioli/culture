@@ -2,6 +2,7 @@ const AdminBiz = require('../../../../../../comm/biz/admin_biz.js');
 const pageHelper = require('../../../../../../helper/page_helper.js');
 const cloudHelper = require('../../../../../../helper/cloud_helper.js');
 const validate = require('../../../../../../helper/validate.js');
+const timeHelper = require('../../../../../../helper/time_helper.js');
 const ActivityBiz = require('../../../../biz/activity_biz.js');
 const AdminActivityBiz = require('../../../../biz/admin_activity_biz.js');
 const formSetHelper = require('../../../../../../cmpts/public/form/form_set_helper.js');
@@ -97,9 +98,9 @@ Page({
 			formOrder: activity.ACTIVITY_ORDER,
 
 			formMaxCnt: activity.ACTIVITY_MAX_CNT,
-			formStart: activity.ACTIVITY_START,
-			formEnd: activity.ACTIVITY_END,
-			formStop: activity.ACTIVITY_STOP,
+			formStart: this._fmtTime(activity.ACTIVITY_START),
+			formEnd: this._fmtTime(activity.ACTIVITY_END),
+			formStop: this._fmtTime(activity.ACTIVITY_STOP),
 
 			formAddress: activity.ACTIVITY_ADDRESS,
 			formAddressGeo: activity.ACTIVITY_ADDRESS_GEO,
@@ -119,7 +120,8 @@ Page({
 		if (!AdminBiz.isAdmin(this)) return;
 
 		// 数据校验
-		let data = this.data;
+		let timeFields = this._syncTimeFields();
+		let data = Object.assign({}, this.data, timeFields);
 		data = validate.check(data, AdminActivityBiz.CHECK_FORM, this);
 		if (!data) return;
 
@@ -165,12 +167,13 @@ Page({
 					'ACTIVITY_CHECK_SET': data.checkSet,
 					'ACTIVITY_CANCEL_SET': data.cancelSet,
 					'ACTIVITY_IS_MENU': data.isMenu,
-					statusDesc: res.data.statusDesc
+					statusDesc: res.data && res.data.statusDesc
 				}
 				pageHelper.modifyPrevPageListNodeObject(activityId, node);
 			});
 
-			await cloudHelper.transFormsTempPics(forms, 'activity/', activityId, 'admin/activity_update_forms');
+			if (this._hasTempMedia(forms))
+				await cloudHelper.transFormsTempPics(forms, 'activity/', activityId, 'admin/activity_update_forms');
 
 			let callback = () => {
 				wx.navigateBack();
@@ -178,9 +181,61 @@ Page({
 			pageHelper.showSuccToast('修改成功', 2000, callback);
 
 		} catch (err) {
-			console.log(err);
+			console.error('admin/activity_edit failed:', err);
+			return pageHelper.showModal('活动修改失败：' + this._fmtErr(err));
 		}
 
+	},
+
+	_hasTempMedia: function (forms = []) {
+		const isTemp = val => typeof val === 'string' && (val.includes('tmp') || val.includes('temp') || val.includes('wxfile'));
+		return forms.some(item => {
+			if (!item) return false;
+			if (item.type == 'image' && Array.isArray(item.val)) return item.val.some(isTemp);
+			if (item.type == 'content' && Array.isArray(item.val)) return item.val.some(node => node && node.type == 'img' && isTemp(node.val));
+			if (item.type == 'file' && Array.isArray(item.val)) return item.val.some(file => file && isTemp(file.path));
+			return false;
+		});
+	},
+
+	_fmtErr: function (err) {
+		if (!err) return '未知错误';
+		return err.msg || err.message || err.errMsg || JSON.stringify(err);
+	},
+
+	_fmtTime: function (val) {
+		if (!val) return '';
+		if (typeof val === 'number') return timeHelper.timestamp2Time(val, 'Y-M-D h:m');
+		return val;
+	},
+
+	// Time picker events write directly to the form fields used by validation.
+	bindStartTime: function (e) {
+		this.setData({ formStart: e.detail || '' });
+	},
+
+	bindEndTime: function (e) {
+		this.setData({ formEnd: e.detail || '' });
+	},
+
+	bindStopTime: function (e) {
+		this.setData({ formStop: e.detail || '' });
+	},
+
+	_syncTimeFields: function () {
+		const pickerMap = {
+			formStart: '#activity-start-time',
+			formEnd: '#activity-end-time',
+			formStop: '#activity-stop-time'
+		};
+		let values = {};
+		for (let field in pickerMap) {
+			let picker = this.selectComponent(pickerMap[field]);
+			if (picker && picker.getSelectedTime) values[field] = picker.getSelectedTime() || this.data[field] || '';
+		}
+		this.setData(values);
+		console.log('activity time fields:', values);
+		return values;
 	},
 
 	bindMapTap: function (e) {

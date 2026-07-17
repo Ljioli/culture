@@ -65,7 +65,7 @@
 			<view class="product">
 				<!-- 这里放置你的横向滚动内容 -->
 				<view class="scroll-item" wx:for="{{productList}}" wx:key="index" bind:tap="url" data-url="../../product/detail/product_detail?id={{item._id}}">
-					<image src="{{item.PRODUCT_OBJ.cover[0]}}" lazy-load="true" class="loading" mode="aspectFill" />
+					<image src="{{item.PRODUCT_OBJ.cover[0]}}" lazy-load="true" mode="aspectFill" />
 					<text class="title text-cut">{{item.PRODUCT_TITLE}}</text>
 				</view>
 			</view>
@@ -88,7 +88,7 @@
 			<view class="activity">
 				<!-- 这里放置你的横向滚动内容 -->
 				<view class="scroll-item" wx:for="{{activityList}}" wx:key="index" bind:tap="url" data-url="../../activity/detail/activity_detail?id={{item._id}}">
-					<image src="{{item.ACTIVITY_OBJ.cover[0]}}" class="loading" lazy-load="true" mode="aspectFill" />
+					<image src="{{item.ACTIVITY_OBJ.cover[0]}}" lazy-load="true" mode="aspectFill" />
 					<text class="title text-cut">{{item.ACTIVITY_TITLE}}</text>
 				</view>
 			</view>
@@ -125,13 +125,13 @@
 			<!-- 重点是mode为widthFix -->
 			<view class="content-item-img">
 				<view class="mark">{{INFO_CATE_NAME}}</view>
-				<image src="{{INFO_OBJ.cover[0] || '/projects/culture/images/none.png'}}" class="content-item-img loading" lazy-load="{{true}}" mode="widthFix" />
+				<image src="{{INFO_OBJ.cover[0] || '/projects/culture/images/none.png'}}" class="content-item-img" lazy-load="{{true}}" mode="widthFix" />
 			</view>
 
 			<view class="content-item-box">
 				<view class="line1 content-cut-one">{{INFO_OBJ.title}}</view>
 				<view class="line2">
-					<image src="{{user.USER_PIC || '/projects/culture/images/none.png'}}" mode="aspectFill" lazy-load="{{true}}" class="avatar loading" />
+					<image src="{{user.USER_PIC || '/projects/culture/images/none.png'}}" mode="aspectFill" lazy-load="{{true}}" class="avatar" />
 					<view class="name text-cut">{{user.USER_NAME || '文旅用户'}}</view>
 				</view>
 			</view>

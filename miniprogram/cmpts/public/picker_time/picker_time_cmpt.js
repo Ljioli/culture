@@ -81,6 +81,11 @@ Component({
 	 * 组件的方法列表
 	 */
 	methods: {
+		getSelectedTime: function () {
+			if (!Array.isArray(this.data.multiIndex) || this.data.multiIndex.length == 0) return '';
+			return this._getTimeStr(this.data.multiIndex);
+		},
+
 		_fmtTime: function (str) {
 			str = str.replace(/[^0-9]/ig, '');
 			str = parseInt(str);

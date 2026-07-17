@@ -198,7 +198,8 @@ page {
 .content-list {
 	display: flex;
 	justify-content: space-between;
-	padding: 20rpx 30rpx;
+	padding: 20rpx 12rpx 30rpx;
+	box-sizing: border-box;
 }
 
 .content-left,
@@ -207,9 +208,9 @@ page {
 }
 
 .content-item {
-	margin: 10rpx auto 20rpx;
+	margin: 10rpx 0 20rpx;
 	background: #fff;
-	width: 98%;
+	width: 100%;
 	border-radius: 10rpx;
 	position: relative;
 	overflow: hidden;
