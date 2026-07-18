@@ -12,3 +12,29 @@ $RECYCLE.BIN/
 
 # Node.js
 node_modules/
+dist/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Logs
+*.log
+
+# Local runtime data
+demo/smart_guide_flask/runtime/
+demo/smart_guide_flask/flask_stdout.log
+demo/smart_guide_flask/flask_stderr.log
+backend/vite_stdout.log
+backend/vite_stderr.log
+
+# WeChat developer private config
+project.private.config.json
+miniprogram/project.private.config.json

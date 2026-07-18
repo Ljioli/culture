@@ -1,0 +1,23 @@
+{
+  "name": "weculture-backend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^6.1.0",
+    "@cloudbase/js-sdk": "^2.24.0",
+    "antd": "^6.1.4",
+    "dayjs": "^1.11.19",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.1.2",
+    "vite": "^7.3.1"
+  }
+}

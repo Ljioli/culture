@@ -50,10 +50,10 @@
 					<image src="../../../images/menu/p2.png" />
 				</view>
 				<view class="guide-entry-copy">
-					<view class="guide-entry-title">????</view>
-					<view class="guide-entry-desc">AI ?????????????????????????????????????</view>
+					<view class="guide-entry-title">智能导览</view>
+					<view class="guide-entry-desc">智能解答游玩问题，查看游玩攻略、特色活动、游客真实游记，轻松规划行程</view>
 				</view>
-				<view class="guide-entry-action">????</view>
+				<view class="guide-entry-action">立即提问</view>
 			</view>
 
 		</view>

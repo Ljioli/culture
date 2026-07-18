@@ -50,5 +50,18 @@ CREATE TABLE IF NOT EXISTS guide_knowledge (
     FOREIGN KEY (scenic_id) REFERENCES scenic_area(id)
 );
 
+CREATE TABLE IF NOT EXISTS guide_chat_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    visitor_id TEXT,
+    question TEXT NOT NULL,
+    answer TEXT NOT NULL,
+    sources TEXT,
+    hit_mode TEXT NOT NULL DEFAULT 'knowledge',
+    scenic_code TEXT,
+    client_type TEXT NOT NULL DEFAULT 'miniprogram',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX IF NOT EXISTS idx_scenic_activity_scenic_date ON scenic_activity (scenic_id, activity_date);
 CREATE INDEX IF NOT EXISTS idx_guide_knowledge_scenic_category ON guide_knowledge (scenic_id, category, is_active);
+CREATE INDEX IF NOT EXISTS idx_guide_chat_log_created_at ON guide_chat_log (created_at DESC);

@@ -76,7 +76,11 @@ async function app(event, context) {
 		console.log('');
 		let time = timeUtil.time('Y-M-D h:m:s');
 		let timeTicks = timeUtil.time();
-		let openId = wxContext.OPENID;
+		// Web 管理后台使用 CloudBase Web SDK 调用同一云函数，没有小程序 OPENID。
+		// Web 端仅允许进入 admin 路由，后续仍必须通过管理员账号密码和 token 校验。
+		const isWebAdmin = event.client === 'web-admin'
+			&& (r.startsWith('admin/') || r === 'home/setup_get');
+		let openId = wxContext.OPENID || (isWebAdmin ? 'web-admin' : '');
 
 		console.log('▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤▤');
 		console.log(`【↘${time} ENV (${config.CLOUD_ID})】【Request Base↘↘↘】\n【↘Route =***${r}】\n【↘Controller = ${controllerName}】\n【↘Action = ${actionName}】\n【↘OPENID = ${openId}】\n【↘PID = ${global.PID}】`);

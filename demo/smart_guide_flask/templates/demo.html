@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智能导览演示</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #f7f1ea; font-family: -apple-system, sans-serif; }
+.container { max-width: 600px; margin: 0 auto; padding: 16px; }
+.header { background: linear-gradient(135deg, #b77440, #8e5328); color: #fff; padding: 20px; border-radius: 14px; margin-bottom: 16px; }
+.header h1 { font-size: 20px; }
+.header p { font-size: 13px; opacity: .85; margin-top: 6px; }
+.status { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; margin-top: 10px; }
+.status.ok { background: #d4edda; color: #155724; }
+.status.bad { background: #f8d7da; color: #721c24; }
+.chat { background: #fff; border-radius: 14px; padding: 16px; margin-bottom: 16px; max-height: 500px; overflow-y: auto; }
+.msg { margin-bottom: 14px; }
+.msg .role { font-size: 12px; font-weight: 700; margin-bottom: 4px; opacity: .7; }
+.msg .bubble { padding: 12px 14px; border-radius: 12px; font-size: 14px; line-height: 1.7; white-space: pre-wrap; }
+.msg.user { text-align: right; }
+.msg.user .bubble { background: linear-gradient(135deg, #b77440, #8e5328); color: #fff; display: inline-block; text-align: left; max-width: 85%; }
+.msg.assistant .bubble { background: #f5f0eb; display: inline-block; max-width: 85%; }
+.msg.error .bubble { background: #fff3ef; color: #9a4027; }
+.sources { font-size: 11px; color: #888; margin-top: 6px; }
+.input-area { display: flex; gap: 8px; background: #fff; border-radius: 14px; padding: 12px; }
+.input-area input { flex: 1; border: none; background: #f6f3ef; padding: 10px 14px; border-radius: 10px; font-size: 14px; outline: none; }
+.input-area button { background: linear-gradient(135deg, #b77440, #8e5328); color: #fff; border: none; padding: 10px 20px; border-radius: 10px; font-size: 14px; cursor: pointer; }
+.quick { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.quick button { padding: 8px 14px; border-radius: 20px; border: 1px solid #ddd; background: #fff; font-size: 12px; cursor: pointer; color: #555; }
+.quick button:hover { background: #f5e8dc; border-color: #b77440; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>智能导览 · 浏览器演示</h1>
+    <p>直接连接本地 Flask + Ollama，绕过微信域名限制</p>
+    <div id="statusBadge" class="status">检测服务状态...</div>
+  </div>
+
+  <div class="chat" id="chatBox">
+    <div class="msg assistant">
+      <div class="role">智能导览</div>
+      <div class="bubble">欢迎使用智能导览。你可以直接提问景区介绍、活动安排、开放时间、门票预约、交通停车、酒店餐饮等问题。</div>
+    </div>
+  </div>
+
+  <div class="quick" id="quickList"></div>
+
+  <div class="input-area">
+    <input id="questionInput" placeholder="请输入问题..." maxlength="200" onkeydown="if(event.key==='Enter') send()">
+    <button onclick="send()">发送</button>
+  </div>
+</div>
+
+<script>
+const API = '/api/guide/ask';
+const HEALTH = '/api/guide/health';
+
+const QUICK_QS = [
+  '请介绍一下云溪山谷文旅度假区',
+  '这周末有什么活动安排？',
+  '景区开放时间是什么？',
+  '门票和预约规则是怎样的？',
+  '怎么停车比较方便？',
+  '附近有什么酒店和餐饮推荐？',
+  '旅游对身体有什么好处？',
+  '去景区拍照穿什么好？',
+];
+
+let loading = false;
+
+// Init quick questions
+const quickEl = document.getElementById('quickList');
+QUICK_QS.forEach(q => {
+  const btn = document.createElement('button');
+  btn.textContent = q;
+  btn.onclick = () => { document.getElementById('questionInput').value = q; send(); };
+  quickEl.appendChild(btn);
+});
+
+// Health check
+fetch(HEALTH)
+  .then(r => r.json())
+  .then(d => {
+    const badge = document.getElementById('statusBadge');
+    if (d.code === 0) {
+      badge.textContent = '服务已连接 ✓  ' + (d.data.vector_ready ? '向量库就绪' : '');
+      badge.className = 'status ok';
+    }
+  })
+  .catch(() => {
+    document.getElementById('statusBadge').textContent = '⚠ 服务未连接，请确认 Flask 已启动';
+    document.getElementById('statusBadge').className = 'status bad';
+  });
+
+function addMsg(role, content, sources, isError) {
+  const box = document.getElementById('chatBox');
+  const div = document.createElement('div');
+  div.className = 'msg ' + role + (isError ? ' error' : '');
+  div.innerHTML = '<div class="role">' + (role === 'assistant' ? '智能导览' : '你') + '</div>'
+    + '<div class="bubble">' + content.replace(/\n/g, '<br>') + '</div>';
+  if (sources && sources.length) {
+    div.innerHTML += '<div class="sources">来源: ' + sources.join(', ') + '</div>';
+  }
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function send() {
+  const input = document.getElementById('questionInput');
+  const q = (input.value || '').trim();
+  if (!q || loading) return;
+
+  addMsg('user', q);
+  input.value = '';
+  loading = true;
+
+  fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question: q }),
+    signal: AbortSignal.timeout(120000),
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.code === 0 && d.data) {
+      addMsg('assistant', d.data.answer || '暂未查询到相关信息', d.data.sources || []);
+    } else {
+      addMsg('assistant', '服务暂不可用，请稍后重试。', ['服务异常'], true);
+    }
+  })
+  .catch(err => {
+    addMsg('assistant', '本地智能导览服务暂不可用。\n\n失败原因：' + (err.message || '连接失败'), ['本地服务连接失败'], true);
+  })
+  .finally(() => { loading = false; });
+}
+</script>
+</body>
+</html>
